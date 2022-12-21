@@ -1,70 +1,15 @@
-import { collectObj, collectOpts, solverFn, solverSpace } from "./types";
+import { collectObj, collectOpts, iterFunction, solverFn } from "./types";
 import { type } from "@wonderlandlabs/walrus";
+import { makeSolvers, cf } from "./solvers";
+import clone from "lodash.clone";
 
-const Solvers: solverSpace = {};
+export const c = (...args: any[]) => (new Collect(...args));
 
-Solvers.void = {
-  keys() {
-    return []
-  },
-  size() {
-    return 0
-  }
-}
+cf.create = c;
 
-Solvers.scalar = { ...Solvers.void };
-Solvers.function = { ...Solvers.void };
+const solvers = makeSolvers();
 
-const IntegerKeySolver = {
-  ...Solvers.void,
-  keys(c: collectObj) {
-    const keys: number[] = [];
-    const size: number = c.size;
-    for (let key = 0; key < size; ++key) {
-      keys.push(key)
-    }
-    return keys;
-  },
-  size() {
-    throw new Error('size must be overridden over IntegerKeySolver')
-  }
-}
-
-Solvers.array = {
-  ...IntegerKeySolver,
-  size(c: collectObj) {
-    return c.value.length;
-  }
-};
-
-const SizeBased = {
-  size(c: collectObj) {
-    return c.value.size;
-  },
-}
-
-Solvers.set = {
-  ...IntegerKeySolver,
-  ...SizeBased
-}
-
-Solvers.map = {
-  ...SizeBased,
-  keys(c) {
-    return Array.from(c.value.keys());
-  }
-}
-
-Solvers.object = {
-  keys(c: collectObj) {
-    return Array.from(Object.keys(c.value));
-  },
-  size(c: collectObj) {
-    return c.keys.length;
-  }
-}
-
-export class Collect {
+export class Collect implements collectObj {
   constructor(value?: any, opts?: collectOpts) {
     this._value = value;
     this.opts = opts;
@@ -74,10 +19,20 @@ export class Collect {
     return this._value;
   }
 
+  clone(): collectObj {
+    return new Collect(clone(this.value));
+  }
+
   set value(value: any) {
     this._type = undefined;
     this._keySolver = undefined;
     this._value = value;
+  }
+
+  _$(v: any) {
+    //@TODO: enforce locking
+    this._value = v;
+    this._type = type.describe(v);
   }
 
   private _value?: any;
@@ -101,10 +56,34 @@ export class Collect {
   private _keySolver?: solverFn;
 
   get keys(): any[] {
-    return Solvers[this.form]?.keys(this) ?? [];
+    return solvers[this.form]?.keys(this) ?? [];
+  }
+
+  get values(): any[] {
+    return solvers[this.form]?.values(this) ?? [];
   }
 
   get size(): number {
-    return Solvers[this.form]?.size(this) ?? 0;
+    return solvers[this.form]?.size(this) ?? 0;
+  }
+
+  set(key: any, value: any) {
+    solvers[this.form]?.set(this, key, value);
+  }
+
+  get(key: any): any {
+    return solvers[this.form]?.get(this, key);
+  }
+
+  get iter(): IterableIterator<[any, any]> {
+    return solvers[this.form]?.iter(this);
+  }
+
+  forEach(iter: iterFunction): void {
+    return solvers[this.form]?.forEach(this, iter);
+  }
+
+  map(iter: iterFunction): void {
+    return solvers[this.form]?.map(this, iter);
   }
 }
