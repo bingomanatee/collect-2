@@ -12,6 +12,41 @@ export const makeSolvers = () => {
 
   const solvers: solverSpace = {};
 
+  const scalarSolver = {
+    keys() {
+      return []
+    },
+    values() {
+      return []
+    },
+    size() {
+      return 0
+    },
+    get(c: collectObj, key: any) {
+      throw new Error(`cannot get ${key} from form ${c.form}`);
+    },
+    set(c: collectObj, key: any, _value: any) {
+      throw new Error(`cannot set ${key} to form ${c.form}`);
+    },
+    has() {
+      return false;
+    },
+    iter(c: collectObj): IterableIterator<[any, any]> {
+      throw new Error(`cannot iterate on a ${c.form}`);
+    },
+    forEach(c: collectObj, iter: iterFunction) {
+      throw new Error(`cannot iterate over ${c.form}`);
+    },
+    map(c: collectObj, iter: iterFunction) {
+      throw new Error(`cannot iterate over ${c.form}`);
+    },
+    clone(c: collectObj) {
+      return cf.create(c.value);
+    },
+    clear(c: collectObj) {
+      c._$(undefined);
+    }
+  }
   const iterate = (c: collectObj, iterFn: iterFunction) => {
     const { size, iter } = c;
 
@@ -42,6 +77,7 @@ export const makeSolvers = () => {
   const mutate = (c: collectObj, iterFn: iterFunction) => {
     const { size, iter } = c;
     const c2 = c.clone();
+    c2.clear();
 
     let iterations = 0;
     do {
@@ -70,8 +106,10 @@ export const makeSolvers = () => {
     return c2.value;
   }
 
+  // partial solvers
+
   const integerKeySolver = {
-    ...solvers.void,
+    ...scalarSolver,
     keys(c: collectObj) {
       const keys: number[] = [];
       const size: number = c.size;
@@ -111,7 +149,6 @@ export const makeSolvers = () => {
       iterate(c, iterFn);
     }
   }
-
   const sizeBasedSolver = {
     size(c: collectObj) {
       return c.value.size;
@@ -123,38 +160,6 @@ export const makeSolvers = () => {
       return c.value.entries();
     },
   }
-  const scalarSolver = {
-    keys() {
-      return []
-    },
-    values() {
-      return []
-    },
-    size() {
-      return 0
-    },
-    get(c: collectObj, key: any) {
-      throw new Error(`cannot get ${key} from form ${c.form}`);
-    },
-    set(c: collectObj, key: any, _value: any) {
-      throw new Error(`cannot set ${key} to form ${c.form}`);
-    },
-    has() {
-      return false;
-    },
-    iter(c: collectObj): IterableIterator<[any, any]> {
-      throw new Error(`cannot iterate on a ${c.form}`);
-    },
-    forEach(c: collectObj, iter: iterFunction) {
-      throw new Error(`cannot iterate over ${c.form}`);
-    },
-    map(c: collectObj, iter: iterFunction) {
-      throw new Error(`cannot iterate over ${c.form}`);
-    },
-    clone(c: collectObj) {
-      return cf.create(c.value);
-    }
-  }
 
   solvers.void = {
     ...scalarSolver
@@ -162,7 +167,13 @@ export const makeSolvers = () => {
 
 
   solvers.scalar = { ...scalarSolver };
-  solvers.function = { ...scalarSolver };
+  solvers.function = {
+    ...scalarSolver,
+    clear(c: collectObj) {
+      c._$(() => {
+      }); // noop
+    }
+  };
 
   solvers.array = {
     ...integerKeySolver,
@@ -185,7 +196,21 @@ export const makeSolvers = () => {
     clone(c: collectObj) {
       return cf.create([...c.value]);
     },
-
+    clear(c: collectObj) {
+      c._$([])
+    },
+    set(c: collectObj, key: any, value: any) {
+      if (typeof key !== 'number') {
+        throw new Error('can only set array values with numbers');
+      }
+      if (!Number.isInteger(key)) {
+        throw new Error('arrays keys must be integers');
+      }
+      if (key < 0) {
+        throw new Error('arrays keys must be whole numbers');
+      }
+      c.value[key] = value;
+    }
   };
 
   solvers.set = {
@@ -206,6 +231,26 @@ export const makeSolvers = () => {
     },
     clone(c: collectObj) {
       return cf.create(new Set(c.value));
+    },
+    clear(c: collectObj) {
+      c.value.clear();
+    },
+    map(c: collectObj, iterFn: iterFunction) {
+      const out = new Set();
+
+      for (const [key, value] of c.iter) {
+        try {
+          const v2 = iterFn(value, key, c);
+          out.add(v2);
+        } catch (err) {
+          // @ts-ignore
+          if (err?.$STOP) {
+            break;
+          }
+          throw err;
+        }
+      }
+      return out;
     }
   }
 
@@ -226,6 +271,9 @@ export const makeSolvers = () => {
     },
     clone(c: collectObj) {
       return cf.create(new Map(c.value));
+    },
+    clear(c: collectObj) {
+      c.value.clear();
     }
   }
 
@@ -253,7 +301,10 @@ export const makeSolvers = () => {
       return Object.entries(c.value)[Symbol.iterator]();
     },
     clone(c: collectObj) {
-      return cf.create({...c.value});
+      return cf.create({ ...c.value });
+    },
+    clear(c: collectObj) {
+      c._$({})
     }
   }
 

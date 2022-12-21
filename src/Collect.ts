@@ -14,13 +14,11 @@ export class Collect implements collectObj {
     this._value = value;
     this.opts = opts;
   }
+  opts?: collectOpts;
 
+  private _value?: any;
   get value(): any {
     return this._value;
-  }
-
-  clone(): collectObj {
-    return new Collect(clone(this.value));
   }
 
   set value(value: any) {
@@ -29,14 +27,24 @@ export class Collect implements collectObj {
     this._value = value;
   }
 
+  // ---------- misc. change methodss
+
+  clone(): collectObj {
+    return new Collect(clone(this.value));
+  }
+
   _$(v: any) {
     //@TODO: enforce locking
     this._value = v;
     this._type = type.describe(v);
   }
 
-  private _value?: any;
-  opts?: collectOpts;
+  clear(): collectObj {
+    solvers[this.form]?.clear(this);
+    return this;
+  }
+
+  // ----------- introspection
 
   private _type?: any;
   get type(): string {

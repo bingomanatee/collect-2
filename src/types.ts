@@ -14,6 +14,7 @@ export type collectObj = {
   clone: () => collectObj;
   get: (key: any) => any;
   set: (key: any, value: any) => void;
+  clear(): void;
 }
 
 export type solverFn = (collect: collectObj, name?: string) => any;
@@ -35,6 +36,7 @@ export interface solverObj {
   forEach(c: collectObj, iter: iterFunction) : void;
   map (c: collectObj, iterFn: iterFunction) : any;
   clone(c: collectObj) : collectObj;
+  clear(c: collectObj) : void;
 }
 
 export type solverSpace = { [key: string]: solverObj };
