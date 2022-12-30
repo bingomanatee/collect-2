@@ -71,6 +71,10 @@ export class Collect implements collectObj {
     return solvers[this.form]?.values(this) ?? [];
   }
 
+  keyOf(item: any) {
+    return solvers[this.form]?.keyOf(this, item);
+  }
+
   get size(): number {
     return solvers[this.form]?.size(this) ?? 0;
   }

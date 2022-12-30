@@ -6,6 +6,7 @@ export type collectObj = {
   type: string;
   form: string;
   keys: any[];
+  values: any[];
   size: number;
   _$(v: any): void; // an internal method to update the value - not for general use.
   iter: IterableIterator<[any, any]>;
@@ -15,6 +16,7 @@ export type collectObj = {
   get: (key: any) => any;
   set: (key: any, value: any) => void;
   clear(): void;
+  keyOf: (key: any) => any
 }
 
 export type solverFn = (collect: collectObj, name?: string) => any;
@@ -37,6 +39,7 @@ export interface solverObj {
   map (c: collectObj, iterFn: iterFunction) : any;
   clone(c: collectObj) : collectObj;
   clear(c: collectObj) : void;
+  keyOf(c: collectObj, key: any): any;
 }
 
 export type solverSpace = { [key: string]: solverObj };

@@ -153,6 +153,61 @@ describe('Collect', () => {
         })
       })
     })
+    describe('keyOf', () => {
+      describe('void', () => {
+        it('should throw', () => {
+          expect(() => c().keyOf(100)).toThrow();
+        })
+      })
+      describe('function', () => {
+        it('should throw', () => {
+          expect(() => c(() => {
+          }).keyOf(100)).toThrow();
+        })
+      })
+      describe('scalar', () => {
+        it('should throw', () => {
+          expect(() => c().keyOf(100)).toThrow();
+        })
+      })
+
+      describe('array', () => {
+        it('should return the key of a present item', () => {
+          expect(c([1, 2, 3, 5, 7, 9]).keyOf(5)).toEqual(3);
+        });
+        it('should return undefined for absent item', () => {
+          expect(c([1, 2, 3, 5, 7, 9]).keyOf(-5)).toBeUndefined();
+        });
+      })
+      describe('map', () => {
+        it('should return key of present item', () => {
+          expect(new Collect(new Map([
+            ['x', 1], ['y', -1], ['z', 4]
+          ])).keyOf(-1)).toEqual('y');
+        })
+        it('should return undefined for absent item', () => {
+          expect(new Collect(new Map([
+            ['x', 1], ['y', -1], ['z', 4]
+          ])).keyOf(10)).toBeUndefined();
+        })
+      })
+      describe('set', () => {
+        it('should return the key of a present item', () => {
+          expect(c(new Set([1, 2, 3, 5, 7, 9])).keyOf(5)).toEqual(3);
+        });
+        it('should return undefined for absent item', () => {
+          expect(c(new Set([1, 2, 3, 5, 7, 9])).keyOf(-5)).toBeUndefined();
+        });
+      })
+      describe('object', () => {
+        it('should return key of present item', () => {
+          expect(new Collect({ x: 1, y: -1, z: 0 }).keyOf(-1)).toEqual('y');
+        })
+        it('should return undefined for absent item', () => {
+          expect(new Collect({ x: 1, y: -1, z: 0 }).keyOf(10)).toBeUndefined();
+        })
+      })
+    })
   });
 });
 /*

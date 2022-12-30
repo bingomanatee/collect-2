@@ -54,7 +54,8 @@ describe('Collect', () => {
       describe('set', () => {
         it('iterates over entries', () => {
           const out = [];
-          for (const entry of new Collect(new Set(['a', 'b', 'c'])).iter) {
+          const values = ['a', 'b', 'c']
+          for (const entry of new Collect(new Set(values)).iter) {
             out.push(entry);
           }
 

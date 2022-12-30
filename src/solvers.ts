@@ -45,19 +45,14 @@ export const makeSolvers = () => {
     },
     clear(c: collectObj) {
       c._$(undefined);
+    },
+    keyOf(c: collectObj, item: any) {
+      throw new Error(`cannot get keyOf ${c.form}`);
     }
   }
   const iterate = (c: collectObj, iterFn: iterFunction) => {
-    const { size, iter } = c;
 
-    let iterations = 0;
-    do {
-      const n = iter.next();
-
-      if (!n || n.done) {
-        break;
-      }
-      const { value: [key, value] } = n;
+    for (const [key, value] of c.iter) {
       const out = (() => {
         try {
           return iterFn(value, key, c);
@@ -68,11 +63,7 @@ export const makeSolvers = () => {
       if (out instanceof Stop || out?.$STOP) {
         break;
       }
-      if (out instanceof Error) {
-        throw out;
-      }
-      ++iterations
-    } while (iterations <= size);
+    }
   }
   const mutate = (c: collectObj, iterFn: iterFunction) => {
     const { size, iter } = c;
@@ -165,7 +156,6 @@ export const makeSolvers = () => {
     ...scalarSolver
   }
 
-
   solvers.scalar = { ...scalarSolver };
   solvers.function = {
     ...scalarSolver,
@@ -210,6 +200,11 @@ export const makeSolvers = () => {
         throw new Error('arrays keys must be whole numbers');
       }
       c.value[key] = value;
+    },
+    keyOf(c: collectObj, item: any) {
+      const num = (c.value as any[]).indexOf(item);
+      if (num < 0) return undefined;
+      return num;
     }
   };
 
@@ -235,6 +230,9 @@ export const makeSolvers = () => {
     clear(c: collectObj) {
       c.value.clear();
     },
+    iter(c: collectObj) {
+      return (c.value as Set<any>).entries()
+    },
     map(c: collectObj, iterFn: iterFunction) {
       const out = new Set();
 
@@ -251,6 +249,9 @@ export const makeSolvers = () => {
         }
       }
       return out;
+    },
+    keyOf(c: collectObj, item: any) {
+      return cf.create(c.values).keyOf(item);
     }
   }
 
@@ -274,6 +275,15 @@ export const makeSolvers = () => {
     },
     clear(c: collectObj) {
       c.value.clear();
+    },
+    iter(c: collectObj) {
+      return (c.value as Map<any, any>)[Symbol.iterator]()
+    },
+    keyOf(c: collectObj, item) {
+      for (const [key, value] of c.iter) {
+        if (item === value) return key;
+      }
+      return undefined;
     }
   }
 
@@ -305,6 +315,13 @@ export const makeSolvers = () => {
     },
     clear(c: collectObj) {
       c._$({})
+    },
+    keyOf(c: collectObj, item) {
+      const iter = c.iter;
+      for (const [key, value] of c.iter) {
+        if (item === value) return key;
+      }
+      return undefined;
     }
   }
 
