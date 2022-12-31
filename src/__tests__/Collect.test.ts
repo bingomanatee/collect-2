@@ -172,23 +172,29 @@ describe('Collect', () => {
       })
 
       describe('array', () => {
+        const values = [1, 2, 3, 5, 7, 9, 2, 4, 2]
         it('should return the key of a present item', () => {
-          expect(c([1, 2, 3, 5, 7, 9]).keyOf(5)).toEqual(3);
+          expect(c(values).keyOf(5)).toEqual(3);
         });
         it('should return undefined for absent item', () => {
-          expect(c([1, 2, 3, 5, 7, 9]).keyOf(-5)).toBeUndefined();
+          expect(c(values).keyOf(-5)).toBeUndefined();
         });
+        it('should return all keys for multi-key search', () => {
+          expect(c(values).keyOf(2, true)).toEqual([1, 6, 8]);
+        })
       })
       describe('map', () => {
+        const value = new Map([
+          ['x', 1], ['y', -1], ['z', 4], ['a', 4], ['b', 3], ['c',4]
+        ])
         it('should return key of present item', () => {
-          expect(new Collect(new Map([
-            ['x', 1], ['y', -1], ['z', 4]
-          ])).keyOf(-1)).toEqual('y');
+          expect(new Collect(value).keyOf(-1)).toEqual('y');
         })
         it('should return undefined for absent item', () => {
-          expect(new Collect(new Map([
-            ['x', 1], ['y', -1], ['z', 4]
-          ])).keyOf(10)).toBeUndefined();
+          expect(new Collect(value).keyOf(10)).toBeUndefined();
+        })
+        it('should return keys of a multi-key search', () => {
+          expect(new Collect(value).keyOf(4, true)).toEqual(['z', 'a', 'c']);
         })
       })
       describe('set', () => {

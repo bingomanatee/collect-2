@@ -71,16 +71,21 @@ export class Collect implements collectObj {
     return solvers[this.form]?.values(this) ?? [];
   }
 
-  keyOf(item: any) {
-    return solvers[this.form]?.keyOf(this, item);
+  keyOf(item: any, allKeys?: boolean) {
+    return solvers[this.form]?.keyOf(this, item, allKeys);
   }
 
   get size(): number {
     return solvers[this.form]?.size(this) ?? 0;
   }
 
-  set(key: any, value: any) {
+  hasKey(key: any) {
+    return solvers[this.form]?.hasKey(this, key);
+  }
+
+  set(key: any, value: any): collectObj {
     solvers[this.form]?.set(this, key, value);
+    return this;
   }
 
   get(key: any): any {
@@ -91,11 +96,23 @@ export class Collect implements collectObj {
     return solvers[this.form]?.iter(this);
   }
 
-  forEach(iter: iterFunction): void {
-    return solvers[this.form]?.forEach(this, iter);
+  forEach(iter: iterFunction): collectObj {
+    solvers[this.form]?.forEach(this, iter);
+    return this;
   }
 
   map(iter: iterFunction): void {
     return solvers[this.form]?.map(this, iter);
   }
+
+  deleteKey(keyOrKeys: any, preserveKeys?: boolean): collectObj {
+    solvers[this.form]?.deleteKey(this, keyOrKeys, preserveKeys);
+    return this;
+  }
+
+  deleteItem(itemOrItems: any, once?: boolean, preserveKeys?: boolean): collectObj {
+    solvers[this.form]?.deleteItem(this, itemOrItems, once, preserveKeys);
+    return this;
+  }
+
 }

@@ -1,6 +1,72 @@
 import { collectObj, createFactory, iterFunction, solverSpace } from "./types";
 import { Stop } from "./Stop";
 
+const iterate = (c: collectObj, iterFn: iterFunction) => {
+
+  for (const [key, value] of c.iter) {
+    const out = (() => {
+      try {
+        return iterFn(value, key, c);
+      } catch (err) {
+        return err;
+      }
+    })()
+    if (out instanceof Stop || out?.$STOP) {
+      break;
+    }
+  }
+}
+const mutate = (c: collectObj, iterFn: iterFunction) => {
+  const { size, iter } = c;
+  const c2 = c.clone();
+  c2.clear();
+
+  let iterations = 0;
+  do {
+    const n = iter.next();
+
+    if (!n || n.done) {
+      break;
+    }
+    const { value: [key, value] } = n;
+    const out = (() => {
+      try {
+        return iterFn(value, key, c);
+      } catch (err) {
+        return err;
+      }
+    })()
+    if (out instanceof Stop || out?.$STOP) {
+      break;
+    }
+    if (out instanceof Error) {
+      throw out;
+    }
+    c2.set(key, out);
+    ++iterations
+  } while (iterations <= size);
+  return c2.value;
+}
+const allItemKeys = (c: collectObj, item: any) => {
+  const out = [];
+  for (const [key, iItem] of c.iter) {
+    if (iItem === item) {
+      out.push(key)
+    }
+  }
+  return out;
+}
+const testNumericKey = (key: any) => {
+  if (typeof key !== 'number') {
+    throw new Error(`non numeric key passed to get: ${key}`)
+  }
+  if (!Number.isFinite(key)) {
+    throw new Error('infinite keys are not allowed');
+  }
+  if (key < 0 || !Number.isInteger(key)) {
+    throw new Error(`key ${key} must be a whole number`);
+  }
+}
 
 export const cf: createFactory = {
   create: (value: any) => {
@@ -28,7 +94,7 @@ export const makeSolvers = () => {
     set(c: collectObj, key: any, _value: any) {
       throw new Error(`cannot set ${key} to form ${c.form}`);
     },
-    has() {
+    hasKey() {
       return false;
     },
     iter(c: collectObj): IterableIterator<[any, any]> {
@@ -46,55 +112,15 @@ export const makeSolvers = () => {
     clear(c: collectObj) {
       c._$(undefined);
     },
-    keyOf(c: collectObj, item: any) {
+    keyOf(c: collectObj, item: any, allKeys?: boolean) {
       throw new Error(`cannot get keyOf ${c.form}`);
+    },
+    deleteKey(c: collectObj, keyOrKeys: any, preserveKeys?: boolean) {
+      throw new Error(`cannot delete keys of ${c.form}`);
+    },
+    deleteItem(c: collectObj, item: any, once?: boolean) {
+      throw new Error(`cannot delete items of ${c.form}`);
     }
-  }
-  const iterate = (c: collectObj, iterFn: iterFunction) => {
-
-    for (const [key, value] of c.iter) {
-      const out = (() => {
-        try {
-          return iterFn(value, key, c);
-        } catch (err) {
-          return err;
-        }
-      })()
-      if (out instanceof Stop || out?.$STOP) {
-        break;
-      }
-    }
-  }
-  const mutate = (c: collectObj, iterFn: iterFunction) => {
-    const { size, iter } = c;
-    const c2 = c.clone();
-    c2.clear();
-
-    let iterations = 0;
-    do {
-      const n = iter.next();
-
-      if (!n || n.done) {
-        break;
-      }
-      const { value: [key, value] } = n;
-      const out = (() => {
-        try {
-          return iterFn(value, key, c);
-        } catch (err) {
-          return err;
-        }
-      })()
-      if (out instanceof Stop || out?.$STOP) {
-        break;
-      }
-      if (out instanceof Error) {
-        throw out;
-      }
-      c2.set(key, out);
-      ++iterations
-    } while (iterations <= size);
-    return c2.value;
   }
 
   // partial solvers
@@ -172,9 +198,7 @@ export const makeSolvers = () => {
       return c.value.length;
     },
     get(c, key) {
-      if (typeof key !== 'number') {
-        throw new Error(`non numeric key passed to get: ${key}`)
-      }
+      testNumericKey(key);
       return c.value[key];
     },
     values(c: collectObj) {
@@ -201,10 +225,74 @@ export const makeSolvers = () => {
       }
       c.value[key] = value;
     },
-    keyOf(c: collectObj, item: any) {
+    keyOf(c: collectObj, item: any, allKeys?: boolean) {
+      if (allKeys) {
+        return allItemKeys(c, item);
+      }
       const num = (c.value as any[]).indexOf(item);
-      if (num < 0) return undefined;
+      if (num < 0) {
+        return undefined;
+      }
       return num;
+    },
+    deleteKey(c: collectObj, keyOrKeys: any, preserveKeys?: boolean) {
+      if (preserveKeys) {
+        c._$(c.map((value, key) => {
+          if (Array.isArray(keyOrKeys)) {
+            if (keyOrKeys.includes(key)) {
+              return undefined;
+            }
+          } else if (keyOrKeys === key) {
+            return undefined;
+          }
+          return value;
+        }))
+      }
+      c._$((c.value as Array<any>).filter((value: any, key: number) => {
+        if (Array.isArray(keyOrKeys)) {
+          if (keyOrKeys.includes(key)) {
+            return false;
+          }
+        } else if (keyOrKeys === key) {
+          return false;
+        }
+        return true;
+      }))
+    },
+    deleteItem(c: collectObj, itemOrItems: any, once?: boolean, preserveKeys?: boolean) {
+      let list: any[] = c.value;
+      if (once) {
+        if (Array.isArray(itemOrItems)) {
+          itemOrItems.forEach((item) => {
+            const i = list.indexOf(item);
+            if (i >= 0) {
+              if (preserveKeys) {
+                list[i] = undefined;
+              } else {
+                delete list[i];
+              }
+            }
+          })
+        } else {
+          const i = list.indexOf(itemOrItems);
+          if (i >= 0) {
+            if (preserveKeys) {
+              list[i] = undefined;
+            } else {
+              delete list[i];
+            }
+          }
+        }
+      } else {
+        if (Array.isArray(itemOrItems)) {
+          itemOrItems.forEach((item) => {
+            list = list.filter((lItem) => lItem !== item);
+          })
+        } else {
+          list = list.filter((lItem) => lItem !== itemOrItems);
+        }
+      }
+      c._$(list)
     }
   };
 
@@ -213,15 +301,17 @@ export const makeSolvers = () => {
     ...sizeBasedSolver,
     ...loopingSolver,
     get(c: collectObj, key: number) {
-      return Array.from(c.value.values())[key];
+      testNumericKey(key);
+      return Array.from(c.values)[key];
     },
     set(c: collectObj, key: number, value: any) {
-      const values = Array.from(c.value.values()).map((v, i) => {
-        if (i === key) {
-          return value;
-        }
-        return v;
-      });
+      testNumericKey(key);
+      const values = Array.from(c.value.values());
+      if (values.length > key) {
+        values[key] = value;
+      } else {
+        values.push(value);
+      }
       c._$(new Set(values));
     },
     clone(c: collectObj) {
@@ -250,8 +340,36 @@ export const makeSolvers = () => {
       }
       return out;
     },
-    keyOf(c: collectObj, item: any) {
+    keyOf(c: collectObj, item: any, allKeys?: boolean) {
+      if (allKeys) {
+        return allItemKeys(c, item);
+      }
       return cf.create(c.values).keyOf(item);
+    },
+    deleteKey(c: collectObj, keyOrKeys: any) {
+      const newSet = new Set(c.value);
+      if (Array.isArray(keyOrKeys)) {
+        keyOrKeys.forEach(((key) => {
+          newSet.delete(c.get(key))
+        }))
+        c._$(newSet);
+      } else if (keyOrKeys < c.size) {
+        const item = c.get(keyOrKeys);
+        (c.value as Set<any>).delete(item)
+      }
+    },
+    deleteItem(c: collectObj, itemOrItems: any) {
+      const list: Set<any> = new Set(c.value);
+
+      if (Array.isArray(itemOrItems)) {
+        itemOrItems.forEach((item) => {
+          list.delete(item);
+        })
+      } else {
+        list.delete(itemOrItems);
+      }
+
+      c._$(list)
     }
   }
 
@@ -264,7 +382,7 @@ export const makeSolvers = () => {
     get(c, key) {
       return c.value.get(key);
     },
-    has(c, key) {
+    hasKey(c, key) {
       return c.value.has(key);
     },
     set(c, key: any, value: any) {
@@ -279,11 +397,56 @@ export const makeSolvers = () => {
     iter(c: collectObj) {
       return (c.value as Map<any, any>)[Symbol.iterator]()
     },
-    keyOf(c: collectObj, item) {
+    keyOf(c: collectObj, item, allKeys?: boolean) {
+      if (allKeys) {
+        return allItemKeys(c, item);
+      }
       for (const [key, value] of c.iter) {
-        if (item === value) return key;
+        if (item === value) {
+          return key;
+        }
       }
       return undefined;
+    },
+    deleteKey(c: collectObj, keyOrKeys: any) {
+      const newMap = new Map(c.value);
+      if (Array.isArray(keyOrKeys)) {
+        keyOrKeys.forEach(((key) => {
+          newMap.delete(key)
+        }))
+        c._$(newMap);
+      } else if (c.hasKey(keyOrKeys)) {
+        (c.value as Map<any, any>).delete(keyOrKeys)
+      }
+    },
+    deleteItem(c: collectObj, itemOrItems: any, once?: boolean) {
+      const map: Map<any, any> = new Map(c.value);
+
+      if (once) {
+        if (Array.isArray(itemOrItems)) {
+          itemOrItems.forEach((item) => {
+            map.delete(c.keyOf(item));
+          })
+        } else {
+          map.delete(c.keyOf(itemOrItems));
+        }
+      } else {
+        if (Array.isArray(itemOrItems)) {
+          for (const [key, item] of c.iter) {
+            if (itemOrItems.includes(item)) {
+              map.delete(key);
+            }
+          }
+        } else {
+          for (const [key, item] of c.iter) {
+            if (itemOrItems === item) {
+              map.delete(key);
+            }
+          }
+        }
+      }
+
+      c._$(map);
     }
   }
 
@@ -301,7 +464,7 @@ export const makeSolvers = () => {
     get(c: collectObj, key) {
       return c.value[key];
     },
-    has(c: collectObj, key) {
+    hasKey(c: collectObj, key) {
       return key in c.value;
     },
     set(c: collectObj, key: any, value: any) {
@@ -316,12 +479,47 @@ export const makeSolvers = () => {
     clear(c: collectObj) {
       c._$({})
     },
-    keyOf(c: collectObj, item) {
-      const iter = c.iter;
+    keyOf(c: collectObj, item, allKeys?: boolean) {
+      if (allKeys) {
+        return allItemKeys(c, item);
+      }
       for (const [key, value] of c.iter) {
-        if (item === value) return key;
+        if (item === value) {
+          return key;
+        }
       }
       return undefined;
+    },
+    deleteKey(c: collectObj, keyOrKeys: any, _preserveKeys?: boolean) {
+      const obj = { ...c.value };
+      if (Array.isArray(keyOrKeys)) {
+        keyOrKeys.forEach((key) => {
+          if (key in obj) {
+            delete obj[key];
+          }
+        });
+        c._$(obj);
+      } else {
+        if (keyOrKeys in obj) {
+          delete obj[keyOrKeys];
+          c._$(obj);
+        }
+      }
+    },
+    deleteItem(c: collectObj, itemOrItems: any, once?: boolean) {
+      const value = { ...c.value };
+
+      if (once) {
+        if (Array.isArray(itemOrItems)) {
+          itemOrItems.forEach((item) => {
+            delete value[c.keyOf(item)];
+          })
+        } else {
+          delete value[c.keyOf(itemOrItems)];
+        }
+      }
+
+      c._$(value);
     }
   }
 
