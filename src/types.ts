@@ -3,12 +3,15 @@ export type collectOpts = {
 }
 export type collectObj = {
   value: any;
+  store: any;
   type: string;
   form: string;
   keys: any[];
   values: any[];
+  items: any[];
   size: number;
   hasKey: (key: any) => boolean;
+  hasItem: (item: any) => boolean;
   _$(v: any): void; // an internal method to update the value - not for general use.
   iter: IterableIterator<[any, any]>;
   forEach: (iterFn: iterFunction) => collectObj;
@@ -20,6 +23,12 @@ export type collectObj = {
   keyOf: (item: any, allKeys?: boolean) => any;
   deleteKey: (key: any, preserveKeys?: boolean) => collectObj;
   deleteItem: (item: any, once?: boolean, preserveKeys?: boolean) => collectObj;
+  first: (count?: number) => any[];
+  last: (count?: number) => any[];
+  firstItem: any;
+  lastItem: any;
+  addBefore(item: any, key?: any) : collectObj;
+  addAfter(item: any, key?: any) : collectObj;
 }
 
 export type solverFn = (collect: collectObj, name?: string) => any;
@@ -35,6 +44,7 @@ export interface solverObj {
   set(c: collectObj, key: any, value: any): void;
   get(c: collectObj, key: any): any;
   hasKey(c: collectObj, key: any): boolean;
+  hasItem(c: collectObj, item: any): boolean;
 
   // iteration
   iter(c: collectObj) : IterableIterator<[any, any]>;
@@ -45,6 +55,11 @@ export interface solverObj {
   keyOf(c: collectObj, key: any, allKeys?: boolean): any;
   deleteKey: (c: collectObj, key: any, preserveKeys?: boolean) => void;
   deleteItem: (c: collectObj, item: any, once?: boolean, preserveKeys?: boolean) => void;
+
+  first: (c: collectObj, count?: number) => any[];
+  last: (c: collectObj, count?: number) => any[];
+  addBefore: (c: collectObj, item: any, key?: any) => void;
+  addAfter: (c: collectObj, item: any, key?: any) => void;
 }
 
 export type solverSpace = { [key: string]: solverObj };

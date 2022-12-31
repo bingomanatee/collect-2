@@ -97,6 +97,9 @@ export const makeSolvers = () => {
     hasKey() {
       return false;
     },
+    hasItem() {
+      return false;
+    },
     iter(c: collectObj): IterableIterator<[any, any]> {
       throw new Error(`cannot iterate on a ${c.form}`);
     },
@@ -120,6 +123,18 @@ export const makeSolvers = () => {
     },
     deleteItem(c: collectObj, item: any, once?: boolean) {
       throw new Error(`cannot delete items of ${c.form}`);
+    },
+    first(c: collectObj) {
+      throw new Error(`cannot get first from ${c.form}`);
+    },
+    last(c: collectObj) {
+      throw new Error(`cannot get first from ${c.form}`);
+    },
+    addBefore(c: collectObj) {
+      throw new Error(`cannot add before a ${c.form}`);
+    },
+    addAfter(c: collectObj) {
+      throw new Error(`cannot add after a ${c.form}`);
     }
   }
 
@@ -141,22 +156,22 @@ export const makeSolvers = () => {
     size() {
       throw new Error('size must be overridden over IntegerKeySolver')
     },
-    get() {
-      throw new Error('get be overridden over IntegerKeySolver')
+    hasKey(c: collectObj, key: any) {
+      testNumericKey(key);
+      return key < c.size
     },
-    set() {
-      throw new Error('set be overridden over IntegerKeySolver')
-    },
-    has(c: collectObj, key: any) {
-      if (typeof key !== 'number') {
-        console.warn('has passed non-numeric key');
-        return false;
+    first(c: collectObj, count?: number) {
+      if (count === undefined || count < 1) {
+        return c.values.slice(0, 1);
       }
-      if (key < 0 || key >= c.size || key !== Math.floor(key)) {
-        return false;
-      }
-      return true;
+      return c.values.slice(0, count);
     },
+    last(c: collectObj, count?: number) {
+      if (count === undefined || count < 1) {
+        return c.values.slice(-1);
+      }
+      return c.values.slice(-count);
+    }
   }
   const loopingSolver = {
     map(c: collectObj, iterFn: iterFunction) {
@@ -293,6 +308,69 @@ export const makeSolvers = () => {
         }
       }
       c._$(list)
+    },
+    hasItem(c: collectObj, item: any) {
+      return (c.value as Array<any>).includes(item);
+    },
+    addBefore(c: collectObj, itemOrItems: any, key?: any) {
+      const out: any[] = [];
+      let added = false;
+      if (key === undefined) {
+        key = 0;
+      }
+
+      testNumericKey(key);
+      c.forEach((iItem, iKey) => {
+        if (iKey === key) {
+          if (Array.isArray(itemOrItems)) {
+            out.push(...itemOrItems)
+          } else {
+            out.push(itemOrItems);
+          }
+          added = true;
+        }
+        out.push(iItem);
+      });
+
+      if (!added) {
+        if (Array.isArray(itemOrItems)) {
+          out.push(...itemOrItems)
+        } else {
+          out.push(itemOrItems);
+        }
+      }
+
+      c._$(out);
+    },
+    addAfter(c: collectObj, itemOrItems: any, key?: any) {
+      const out: any[] = [];
+      let added = false;
+      if (key === undefined) {
+        key = c.size;
+      }
+
+      testNumericKey(key);
+      c.forEach((iItem, iKey) => {
+        out.push(iItem);
+        if (iKey === key) {
+          if (Array.isArray(itemOrItems)) {
+            out.push(...itemOrItems)
+          } else {
+            out.push(itemOrItems);
+          }
+          added = true;
+        }
+      });
+
+      if (!added) {
+        if (Array.isArray(itemOrItems)) {
+          out.push(...itemOrItems)
+        } else {
+          out.push(itemOrItems);
+        }
+      }
+
+      c._$(out);
     }
   };
 
@@ -370,6 +448,15 @@ export const makeSolvers = () => {
       }
 
       c._$(list)
+    },
+    hasItem(c: collectObj, item: any) {
+      return (c.value as Set<any>).has(item);
+    },
+    addBefore(c: collectObj, itemOrItems: any, key?: number) {
+      c._$(new Set(cf.create(c.values).addBefore(itemOrItems, key).value));
+    },
+    addAfter(c: collectObj, itemOrItems: any, key?: number) {
+      c._$(new Set(cf.create(c.values).addAfter(itemOrItems, key).value));
     }
   }
 
@@ -447,6 +534,49 @@ export const makeSolvers = () => {
       }
 
       c._$(map);
+    },
+    hasItem(c: collectObj, item: any) {
+      return (c.value as Map<any, any>).has(item);
+    },
+    first(c: collectObj, count?: number) {
+      if (count === undefined || count < 1) {
+        return c.values.slice(0, 1);
+      }
+      return c.values.slice(0, count);
+    },
+    last(c: collectObj, count?: number) {
+      if (count === undefined || count < 1) {
+        return c.values.slice(-1);
+      }
+      return c.values.slice(-count);
+    },
+    addBefore(c: collectObj, item: any, key?: number) {
+      if (key === undefined) {
+        throw new Error('addBefore for maps requires key');
+      }
+
+      const map: Map<any, any> = new Map([[key, item]]);
+      for (const [iKey, value] of c.iter) {
+        if (key !== iKey) {
+          map.set(iKey, value);
+        }
+      }
+      c._$(map);
+    },
+
+    addAfter(c: collectObj, item: any, key?: number) {
+      if (key === undefined) {
+        throw new Error('addBefore for maps requires key');
+      }
+
+      const map: Map<any, any> = new Map([]);
+      for (const [iKey, value] of c.iter) {
+        if (key !== iKey) {
+          map.set(iKey, value);
+        }
+      }
+      map.set(key, item);
+      c._$(map);
     }
   }
 
@@ -466,6 +596,14 @@ export const makeSolvers = () => {
     },
     hasKey(c: collectObj, key) {
       return key in c.value;
+    },
+    hasItem(c: collectObj, item: any) {
+      for (const [key, kItem] of c.iter) {
+        if (kItem === item) {
+          return true;
+        }
+      }
+      return false;
     },
     set(c: collectObj, key: any, value: any) {
       c._$({ ...c.value, [key]: value });
@@ -520,6 +658,37 @@ export const makeSolvers = () => {
       }
 
       c._$(value);
+    },
+    first(c: collectObj, count?: number) {
+      if (count === undefined || count < 1) {
+        return c.values.slice(0, 1);
+      }
+      return c.values.slice(0, count);
+    },
+    last(c: collectObj, count?: number) {
+      if (count === undefined || count < 1) {
+        return c.values.slice(-1);
+      }
+      return c.values.slice(-count);
+    },
+    addBefore(c: collectObj, item: any, key?: number) {
+      if (key === undefined) {
+        throw new Error('addBefore for objects requires key');
+      }
+
+      const value = {...c.value};
+      delete value[key];
+      c._$({ [key]: item, ...value });
+    },
+
+    addAfter(c: collectObj, item: any, key?: number) {
+      if (key === undefined) {
+        throw new Error('addBefore for objects requires key');
+      }
+
+      const value = {...c.value};
+      delete value[key];
+      c._$({ ...value, [key]: item });
     }
   }
 

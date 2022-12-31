@@ -14,6 +14,7 @@ export class Collect implements collectObj {
     this._value = value;
     this.opts = opts;
   }
+
   opts?: collectOpts;
 
   private _value?: any;
@@ -25,6 +26,11 @@ export class Collect implements collectObj {
     this._type = undefined;
     this._keySolver = undefined;
     this._value = value;
+  }
+
+  get store() {
+    console.warn('store is deprecated for .value');
+    return this.value;
   }
 
   // ---------- misc. change methodss
@@ -71,6 +77,11 @@ export class Collect implements collectObj {
     return solvers[this.form]?.values(this) ?? [];
   }
 
+  get items(): any[] {
+    console.warn('items are deprecated; use .values');
+    return this.values;
+  }
+
   keyOf(item: any, allKeys?: boolean) {
     return solvers[this.form]?.keyOf(this, item, allKeys);
   }
@@ -81,6 +92,10 @@ export class Collect implements collectObj {
 
   hasKey(key: any) {
     return solvers[this.form]?.hasKey(this, key);
+  }
+
+  hasItem(item: any) {
+    return solvers[this.form]?.hasItem(this, item);
   }
 
   set(key: any, value: any): collectObj {
@@ -115,4 +130,29 @@ export class Collect implements collectObj {
     return this;
   }
 
+  first(count?: number) {
+    return solvers[this.form]?.first(this, count);
+  }
+
+  last(count?: number) {
+    return solvers[this.form]?.last(this, count);
+  }
+
+  get firstItem(): any {
+    return this.first(1).pop();
+  }
+
+  get lastItem(): any {
+    return this.last(1).pop();
+  }
+
+  addBefore(itemOrItems: any, key?: any) {
+    solvers[this.form]?.addBefore(this, itemOrItems, key);
+    return this;
+  }
+
+  addAfter(itemOrItems: any, key?: any) {
+    solvers[this.form]?.addAfter(this, itemOrItems, key);
+    return this;
+  }
 }

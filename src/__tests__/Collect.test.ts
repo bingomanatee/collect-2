@@ -100,7 +100,7 @@ describe('Collect', () => {
           expect(new Collect({}).keys).toEqual([]);
         })
       })
-    })
+    });
     describe('size', () => {
       describe('void', () => {
         it('should always return 0', () => {
@@ -152,7 +152,7 @@ describe('Collect', () => {
           expect(new Collect({ x: 1, y: -1, z: 0 }).size).toEqual(3);
         })
       })
-    })
+    });
     describe('keyOf', () => {
       describe('void', () => {
         it('should throw', () => {
@@ -213,7 +213,147 @@ describe('Collect', () => {
           expect(new Collect({ x: 1, y: -1, z: 0 }).keyOf(10)).toBeUndefined();
         })
       })
-    })
+    });
+    describe('first, firstItem', () => {
+      describe('void', () => {
+        it('should throw', () => {
+          expect(() => c().firstItem).toThrow();
+          expect(() => c().first()).toThrow();
+        })
+      })
+      describe('function', () => {
+        it('should throw', () => {
+          expect(() => c().firstItem).toThrow();
+          expect(() => c().first()).toThrow();
+        })
+      })
+      describe('scalar', () => {
+        it('should throw', () => {
+          expect(() => c().firstItem).toThrow();
+          expect(() => c().first()).toThrow();
+        })
+      })
+
+      describe('array', () => {
+        const values = [1, 2, 3, 5, 7, 9, 2, 4, 2]
+        it('should return firstItem', () => {
+          expect(c(values).firstItem).toEqual(1);
+        })
+        it('should return the first item without a param', () => {
+          expect(c(values).first()).toEqual([1])
+        })
+        it('should return the the given params', () => {
+          expect(c(values).first(3)).toEqual([1, 2, 3])
+        })
+      })
+      describe('map', () => {
+        const values = new Map([
+          ['x', 1], ['y', -1], ['z', 4], ['a', 4], ['b', 3], ['c',4]
+        ])
+        it('should return firstItem', () => {
+          expect(c(values).firstItem).toEqual(1);
+        })
+        it('should return the first item without a param', () => {
+          expect(c(values).first()).toEqual([1])
+        })
+        it('should return the the given params', () => {
+          expect(c(values).first(3)).toEqual([1, -1, 4])
+        })
+      })
+      describe.skip('set', () => {
+        const values = [1, 2, 3, 5, 7, 9];
+        it('should return firstItem', () => {
+          expect(c(new Set(values)).firstItem).toEqual(1);
+        });
+        it('should return the first item without a param', () => {
+          expect(c(new Set(values)).first()).toEqual([1])
+        });
+        it('should return the the given params', () => {
+          expect(c(new Set(values)).first(3)).toEqual([1, 2, 3])
+        });
+      })
+      describe('object', () => {
+        const value = {a: 1, b: 10, c: 20, d: 100}
+        it('should return firstItem', () => {
+          expect(c(value).firstItem).toEqual(1);
+        });
+        it('should return the first item without a param', () => {
+          expect(c(value).first()).toEqual([1])
+        });
+        it('should return the the given params', () => {
+          expect(c(value).first(3)).toEqual([1, 10, 20])
+        });
+      })
+    });
+    describe('last, lastItem', () => {
+      describe('void', () => {
+        it('should throw', () => {
+          expect(() => c().keyOf(100)).toThrow();
+        })
+      })
+      describe('function', () => {
+        it('should throw', () => {
+          expect(() => c(() => {
+          }).keyOf(100)).toThrow();
+        })
+      })
+      describe('scalar', () => {
+        it('should throw', () => {
+          expect(() => c().keyOf(100)).toThrow();
+        })
+      })
+
+      describe('array', () => {
+        const values = [1, 2, 3, 5, 7, 9, 2, 4, 2]
+        it('should return lastItem', () => {
+          expect(c(values).lastItem).toEqual(2);
+        })
+        it('should return the last item without a param', () => {
+          expect(c(values).last()).toEqual([2])
+        })
+        it('should return the the given params', () => {
+          expect(c(values).last(3)).toEqual([2, 4, 2])
+        })
+      })
+      describe('map', () => {
+        const values = new Map([
+          ['x', 1], ['y', -1], ['z', 4], ['a', 4], ['b', 3], ['c',4]
+        ])
+        it('should return lastItem', () => {
+          expect(c(values).lastItem).toEqual(4);
+        })
+        it('should return the last item without a param', () => {
+          expect(c(values).last()).toEqual([4])
+        })
+        it('should return the the given params', () => {
+          expect(c(values).last(3)).toEqual([4, 3, 4])
+        })
+      })
+      describe.skip('set', () => {
+        const values = [1, 2, 3, 5, 7, 9];
+        it('should return lastItem', () => {
+          expect(c(new Set(values)).lastItem).toEqual(9);
+        });
+        it('should return the last item without a param', () => {
+          expect(c(new Set(values)).last()).toEqual([9])
+        });
+        it('should return the the given params', () => {
+          expect(c(new Set(values)).last(3)).toEqual([5, 7, 9])
+        });
+      })
+      describe('object', () => {
+        const value = {a: 1, b: 10, c: 20, d: 100}
+        it('should return lastItem', () => {
+          expect(c(value).lastItem).toEqual(100);
+        });
+        it('should return the last item without a param', () => {
+          expect(c(value).last()).toEqual([100])
+        });
+        it('should return the the given params', () => {
+          expect(c(value).last(3)).toEqual([10, 20, 100])
+        });
+      })
+    });
   });
 });
 /*
