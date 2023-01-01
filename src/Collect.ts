@@ -1,7 +1,6 @@
-import { collectObj, collectOpts, iterFunction, reduceFunction, solverFn } from "./types";
+import { collectObj, collectOpts, iterFunction, reduceFunction, solverFn, sortFn } from "./types";
 import { type } from "@wonderlandlabs/walrus";
 import { makeSolvers, cf } from "./solvers";
-import clone from "lodash.clone";
 
 export const c = (...args: any[]) => (new Collect(...args));
 
@@ -31,23 +30,6 @@ export class Collect implements collectObj {
   get store() {
     console.warn('store is deprecated for .value');
     return this.value;
-  }
-
-  // ---------- misc. change methodss
-
-  clone(): collectObj {
-    return new Collect(clone(this.value));
-  }
-
-  _$(v: any) {
-    //@TODO: enforce locking
-    this._value = v;
-    this._type = type.describe(v);
-  }
-
-  clear(): collectObj {
-    solvers[this.form]?.clear(this);
-    return this;
   }
 
   // ----------- introspection
@@ -98,38 +80,6 @@ export class Collect implements collectObj {
     return solvers[this.form]?.hasItem(this, item);
   }
 
-  set(key: any, value: any): collectObj {
-    solvers[this.form]?.set(this, key, value);
-    return this;
-  }
-
-  get(key: any): any {
-    return solvers[this.form]?.get(this, key);
-  }
-
-  get iter(): IterableIterator<[any, any]> {
-    return solvers[this.form]?.iter(this);
-  }
-
-  forEach(iter: iterFunction): collectObj {
-    solvers[this.form]?.forEach(this, iter);
-    return this;
-  }
-
-  map(iter: iterFunction): void {
-    return solvers[this.form]?.map(this, iter);
-  }
-
-  deleteKey(keyOrKeys: any, preserveKeys?: boolean): collectObj {
-    solvers[this.form]?.deleteKey(this, keyOrKeys, preserveKeys);
-    return this;
-  }
-
-  deleteItem(itemOrItems: any, once?: boolean, preserveKeys?: boolean): collectObj {
-    solvers[this.form]?.deleteItem(this, itemOrItems, once, preserveKeys);
-    return this;
-  }
-
   first(count?: number) {
     return solvers[this.form]?.first(this, count);
   }
@@ -146,6 +96,66 @@ export class Collect implements collectObj {
     return this.last(1).pop();
   }
 
+  // ----------- iteration
+
+  reduce(iter: reduceFunction, initial?: any) {
+    return solvers[this.form].reduce(this, iter, initial);
+  }
+
+  get iter(): IterableIterator<[any, any]> {
+    return solvers[this.form]?.iter(this);
+  }
+
+  forEach(iter: iterFunction): collectObj {
+    solvers[this.form]?.forEach(this, iter);
+    return this;
+  }
+
+  map(iter: iterFunction): void {
+    return solvers[this.form]?.map(this, iter);
+  }
+
+  // ----------- mutation
+
+  clone(shallow?: boolean): collectObj {
+    return solvers[this.form]?.clone(this, shallow);
+  }
+
+  cloneEmpty(): collectObj {
+    return this.clone(true).clear();
+  }
+
+  change(v: any): collectObj {
+    //@TODO: enforce locking
+    this._value = v;
+    this._type = type.describe(v);
+    return this;
+  }
+
+  clear(): collectObj {
+    solvers[this.form]?.clear(this);
+    return this;
+  }
+
+  set(key: any, value: any): collectObj {
+    solvers[this.form]?.set(this, key, value);
+    return this;
+  }
+
+  get(key: any): any {
+    return solvers[this.form]?.get(this, key);
+  }
+
+  deleteKey(keyOrKeys: any, preserveKeys?: boolean): collectObj {
+    solvers[this.form]?.deleteKey(this, keyOrKeys, preserveKeys);
+    return this;
+  }
+
+  deleteItem(itemOrItems: any, once?: boolean, preserveKeys?: boolean): collectObj {
+    solvers[this.form]?.deleteItem(this, itemOrItems, once, preserveKeys);
+    return this;
+  }
+
   addBefore(itemOrItems: any, key?: any) {
     solvers[this.form]?.addBefore(this, itemOrItems, key);
     return this;
@@ -156,7 +166,9 @@ export class Collect implements collectObj {
     return this;
   }
 
-  reduce(iter: reduceFunction, initial?: any) {
-    return solvers[this.form].reduce(this, iter, initial);
+  sort(sortFn?: sortFn) {
+    solvers[this.form]?.sort(this, sortFn);
+    return this;
   }
+
 }

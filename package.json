@@ -1,6 +1,6 @@
 {
   "name": "ts-npm-package-boilerplate",
-  "version": "0.1.9",
+  "version": "1.0.0",
   "description": "TypeScript NPM Module Boilerplate",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -33,7 +33,7 @@
   "homepage": "https://github.com/hebertcisco/ts-npm-package-boilerplate#readme",
   "devDependencies": {
     "@types/jest": "29.2.4",
-    "@types/lodash.clone": "^4.5.7",
+    "@types/lodash.clonedeep": "^4.5.0",
     "@typescript-eslint/eslint-plugin": "5.46.0",
     "@typescript-eslint/parser": "5.46.0",
     "eslint": "8.29.0",
@@ -48,6 +48,6 @@
   ],
   "dependencies": {
     "@wonderlandlabs/walrus": "^0.0.2",
-    "lodash.clone": "^4.5.0"
+    "lodash.clonedeep": "^4.5.0"
   }
 }

@@ -14,12 +14,13 @@ export type collectObj = {
   size: number;
   hasKey: (key: any) => boolean;
   hasItem: (item: any) => boolean;
-  _$(v: any): void; // an internal method to update the value - not for general use.
+  change(v: any): void; // an internal method to update the value - not for general use.
   iter: IterableIterator<[any, any]>;
   forEach: (iterFn: iterFunction) => collectObj;
   map: (iterFn: iterFunction) => any;
   reduce: (iterFn: reduceFunction, initial?: any) => any;
-  clone: () => collectObj;
+  clone: (shallow?: boolean) => collectObj;
+  cloneEmpty: () => collectObj;
   get: (key: any) => any;
   set: (key: any, value: any) => collectObj;
   clear(): collectObj;
@@ -32,12 +33,13 @@ export type collectObj = {
   lastItem: any;
   addBefore(item: any, key?: any) : collectObj;
   addAfter(item: any, key?: any) : collectObj;
+  sort(sf?: sortFn) : collectObj;
 }
 
 export type solverFn = (collect: collectObj, name?: string) => any;
-
 export type reduceFunction = (memo: any, value: any, key: any, collect: collectObj) => any;
 export type iterFunction = (value: any, key: any, collect: collectObj) => any;
+export type sortFn = (a: any, b: any) => number;
 
 export interface solverObj {
   // introspection
@@ -55,8 +57,9 @@ export interface solverObj {
   forEach(c: collectObj, iter: iterFunction) : void;
   reduce(c: collectObj, iter: reduceFunction, initial?: any): any;
   map (c: collectObj, iterFn: iterFunction) : any;
-  clone(c: collectObj) : collectObj;
+  clone(c: collectObj, shallow?: boolean) : collectObj;
   clear(c: collectObj) : void;
+  sort(c: collectObj, sorter?: sortFn) : void;
   keyOf(c: collectObj, key: any, allKeys?: boolean): any;
   deleteKey: (c: collectObj, key: any, preserveKeys?: boolean) => void;
   deleteItem: (c: collectObj, item: any, once?: boolean, preserveKeys?: boolean) => void;
@@ -69,5 +72,5 @@ export interface solverObj {
 
 export type solverSpace = { [key: string]: solverObj };
 
-export type createFn = (value: any) => collectObj;
+export type createFn = (value: any, opts?: collectOpts) => collectObj;
 export type createFactory = { create: createFn }

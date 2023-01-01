@@ -1,4 +1,5 @@
-import { collectObj, createFactory, iterFunction, reduceFunction, solverSpace } from "./types";
+import { collectObj, createFactory, iterFunction, reduceFunction, solverSpace, sortFn } from "./types";
+import clone from 'lodash.clonedeep';
 import { Stop } from "./Stop";
 
 const iterate = (c: collectObj, iterFn: iterFunction) => {
@@ -48,9 +49,9 @@ const mutate = (c: collectObj, iterFn: iterFunction) => {
   return c2.value;
 }
 const select = (c: collectObj, reduceFn: reduceFunction, initial?: any) => {
-  let memo =   initial;
+  let memo = initial;
 
-  for (const [key,value] of c.iter) {
+  for (const [key, value] of c.iter) {
     try {
       memo = reduceFn(memo, value, key, c)
     } catch (err: any) {
@@ -113,6 +114,9 @@ export const makeSolvers = () => {
     set(c: collectObj, key: any, _value: any) {
       throw new Error(`cannot set ${key} to form ${c.form}`);
     },
+    sort(c: collectObj) {
+      throw new Error(`cannot sort form ${c.form}`);
+    },
     hasKey() {
       return false;
     },
@@ -128,14 +132,14 @@ export const makeSolvers = () => {
     map(c: collectObj, iter: iterFunction) {
       throw new Error(`cannot iterate over ${c.form}`);
     },
-    reduce(c: collectObj, iter: reduceFunction, initial?: any) {
+    reduce(c: collectObj, iter: reduceFunction) {
       throw new Error(`cannot reduce ${c.form}`);
     },
     clone(c: collectObj) {
-      return cf.create(c.value);
+      return cf.create(c.value, c.opts);
     },
     clear(c: collectObj) {
-      c._$(undefined);
+      c.change(undefined);
     },
     keyOf(c: collectObj, item: any, allKeys?: boolean) {
       throw new Error(`cannot get keyOf ${c.form}`);
@@ -222,12 +226,35 @@ export const makeSolvers = () => {
     ...scalarSolver
   }
 
-  solvers.scalar = { ...scalarSolver };
+  solvers.scalar = {
+    ...scalarSolver,
+    clear(c: collectObj) {
+      switch (c.type) {
+        case 'bigint':
+          c.change(0);
+          break;
+        case 'number':
+          c.change(0);
+          break;
+        case 'string':
+          c.change('');
+          break;
+        case 'symbol':
+          c.change(Symbol(''));
+          break;
+        case 'boolean':
+          c.change(false);
+          break;
+        default:
+          console.warn('cannot clear type ', c.type);
+          break;
+      }
+    }
+  };
   solvers.function = {
     ...scalarSolver,
     clear(c: collectObj) {
-      c._$(() => {
-      }); // noop
+      throw new Error('cannot clear a function');
     }
   };
 
@@ -247,11 +274,14 @@ export const makeSolvers = () => {
     iter(c: collectObj) {
       return c.value.entries();
     },
-    clone(c: collectObj) {
-      return cf.create([...c.value]);
+    clone(c: collectObj, shallow) {
+      if (shallow) {
+        return cf.create([...c.value]);
+      }
+      return cf.create(clone(c.value))
     },
     clear(c: collectObj) {
-      c._$([])
+      c.change([])
     },
     set(c: collectObj, key: any, value: any) {
       if (typeof key !== 'number') {
@@ -277,7 +307,7 @@ export const makeSolvers = () => {
     },
     deleteKey(c: collectObj, keyOrKeys: any, preserveKeys?: boolean) {
       if (preserveKeys) {
-        c._$(c.map((value, key) => {
+        c.change(c.map((value, key) => {
           if (Array.isArray(keyOrKeys)) {
             if (keyOrKeys.includes(key)) {
               return undefined;
@@ -288,7 +318,7 @@ export const makeSolvers = () => {
           return value;
         }))
       }
-      c._$((c.value as Array<any>).filter((value: any, key: number) => {
+      c.change((c.value as Array<any>).filter((value: any, key: number) => {
         if (Array.isArray(keyOrKeys)) {
           if (keyOrKeys.includes(key)) {
             return false;
@@ -332,7 +362,7 @@ export const makeSolvers = () => {
           list = list.filter((lItem) => lItem !== itemOrItems);
         }
       }
-      c._$(list)
+      c.change(list)
     },
     hasItem(c: collectObj, item: any) {
       return (c.value as Array<any>).includes(item);
@@ -365,7 +395,7 @@ export const makeSolvers = () => {
         }
       }
 
-      c._$(out);
+      c.change(out);
     },
     addAfter(c: collectObj, itemOrItems: any, key?: any) {
       const out: any[] = [];
@@ -395,7 +425,11 @@ export const makeSolvers = () => {
         }
       }
 
-      c._$(out);
+      c.change(out);
+    },
+    sort(c: collectObj, sorter?: sortFn) {
+      const sorted = (c.value as Array<any>).sort(sorter);
+      c.change(sorted);
     }
   };
 
@@ -415,13 +449,20 @@ export const makeSolvers = () => {
       } else {
         values.push(value);
       }
-      c._$(new Set(values));
+      c.change(new Set(values));
     },
-    clone(c: collectObj) {
-      return cf.create(new Set(c.value));
+    clone(c: collectObj, shallow) {
+      if (shallow) {
+        return cf.create(new Set(c.value));
+      }
+      return cf.create(clone(c.value));
     },
     clear(c: collectObj) {
       c.value.clear();
+    },
+    sort(c: collectObj, sorter?: sortFn) {
+      const sorted = (c.values).sort(sorter);
+      c.change(new Set(sorted));
     },
     iter(c: collectObj) {
       return (c.value as Set<any>).entries()
@@ -455,7 +496,7 @@ export const makeSolvers = () => {
         keyOrKeys.forEach(((key) => {
           newSet.delete(c.get(key))
         }))
-        c._$(newSet);
+        c.change(newSet);
       } else if (keyOrKeys < c.size) {
         const item = c.get(keyOrKeys);
         (c.value as Set<any>).delete(item)
@@ -472,7 +513,7 @@ export const makeSolvers = () => {
         list.delete(itemOrItems);
       }
 
-      c._$(list)
+      c.change(list)
     },
     hasItem(c: collectObj, item: any) {
       return (c.value as Set<any>).has(item);
@@ -482,13 +523,13 @@ export const makeSolvers = () => {
       standin.deleteItem(itemOrItems);
 
       standin.addBefore(itemOrItems, key);
-      c._$(new Set(standin.values));
+      c.change(new Set(standin.values));
     },
     addAfter(c: collectObj, itemOrItems: any, key?: number) {
       const standin = cf.create(c.values);
       standin.deleteItem(itemOrItems);
       standin.addAfter(itemOrItems, key);
-      c._$(new Set(standin.values));
+      c.change(new Set(standin.values));
     }
   }
 
@@ -507,11 +548,19 @@ export const makeSolvers = () => {
     set(c, key: any, value: any) {
       c.value.set(key, value);
     },
-    clone(c: collectObj) {
-      return cf.create(new Map(c.value));
+    clone(c: collectObj, shallow) {
+      if (shallow) {
+        return cf.create(new Map(c.value));
+      }
+      return cf.create(clone(c.value));
     },
     clear(c: collectObj) {
       c.value.clear();
+    },
+    sort(c: collectObj, sorter?: sortFn) {
+      const entries = [...(c.value as Map<any, any>).entries()];
+      const map = new Map(entries.sort(sorter));
+      c.change(map);
     },
     iter(c: collectObj) {
       return (c.value as Map<any, any>)[Symbol.iterator]()
@@ -533,7 +582,7 @@ export const makeSolvers = () => {
         keyOrKeys.forEach(((key) => {
           newMap.delete(key)
         }))
-        c._$(newMap);
+        c.change(newMap);
       } else if (c.hasKey(keyOrKeys)) {
         (c.value as Map<any, any>).delete(keyOrKeys)
       }
@@ -565,7 +614,7 @@ export const makeSolvers = () => {
         }
       }
 
-      c._$(map);
+      c.change(map);
     },
     hasItem(c: collectObj, item: any) {
       return (c.value as Map<any, any>).has(item);
@@ -593,7 +642,7 @@ export const makeSolvers = () => {
           map.set(iKey, value);
         }
       }
-      c._$(map);
+      c.change(map);
     },
 
     addAfter(c: collectObj, item: any, key?: number) {
@@ -608,7 +657,7 @@ export const makeSolvers = () => {
         }
       }
       map.set(key, item);
-      c._$(map);
+      c.change(map);
     }
   }
 
@@ -638,16 +687,25 @@ export const makeSolvers = () => {
       return false;
     },
     set(c: collectObj, key: any, value: any) {
-      c._$({ ...c.value, [key]: value });
+      c.change({ ...c.value, [key]: value });
     },
     iter(c: collectObj): IterableIterator<[any, any]> {
       return Object.entries(c.value)[Symbol.iterator]();
     },
-    clone(c: collectObj) {
-      return cf.create({ ...c.value });
+    clone(c: collectObj, shallow) {
+      if (shallow) {
+        return cf.create({ ...c.value });
+      }
+      return cf.create(clone(c.value));
     },
     clear(c: collectObj) {
-      c._$({})
+      c.change({})
+    },
+    sort(c: collectObj, sorter?: sortFn) {
+      const entries : [key: string, value: any][] = [...Object.entries(c.value)].sort(sorter);
+      const obj: {[key: string] : any } = {};
+      entries.forEach(([key , value]) => obj[key] = value);
+      c.change(obj);
     },
     keyOf(c: collectObj, item, allKeys?: boolean) {
       if (allKeys) {
@@ -668,11 +726,11 @@ export const makeSolvers = () => {
             delete obj[key];
           }
         });
-        c._$(obj);
+        c.change(obj);
       } else {
         if (keyOrKeys in obj) {
           delete obj[keyOrKeys];
-          c._$(obj);
+          c.change(obj);
         }
       }
     },
@@ -689,7 +747,7 @@ export const makeSolvers = () => {
         }
       }
 
-      c._$(value);
+      c.change(value);
     },
     first(c: collectObj, count?: number) {
       if (count === undefined || count < 1) {
@@ -708,19 +766,18 @@ export const makeSolvers = () => {
         throw new Error('addBefore for objects requires key');
       }
 
-      const value = {...c.value};
+      const value = { ...c.value };
       delete value[key];
-      c._$({ [key]: item, ...value });
+      c.change({ [key]: item, ...value });
     },
-
     addAfter(c: collectObj, item: any, key?: number) {
       if (key === undefined) {
         throw new Error('addBefore for objects requires key');
       }
 
-      const value = {...c.value};
+      const value = { ...c.value };
       delete value[key];
-      c._$({ ...value, [key]: item });
+      c.change({ ...value, [key]: item });
     }
   }
 

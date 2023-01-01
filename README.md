@@ -1,86 +1,152 @@
-<p align="center">
- <img width="100px" src="https://raw.githubusercontent.com/hebertcisco/ts-npm-package-boilerplate/main/.github/images/favicon512x512-npm.png" align="center" alt=":package: ts-npm-package-boilerplate" />
- <h2 align="center">:package: ts-npm-package-boilerplate</h2>
- <p align="center">TypeScript NPM Module Boilerplate</p>
-  <p align="center">
-    <a href="https://github.com/hebertcisco/ts-npm-package-boilerplate/issues">
-      <img alt="Issues" src="https://img.shields.io/github/issues/hebertcisco/ts-npm-package-boilerplate?style=flat&color=336791" />
-    </a>
-    <a href="https://github.com/hebertcisco/ts-npm-package-boilerplate/pulls">
-      <img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/hebertcisco/ts-npm-package-boilerplate?style=flat&color=336791" />
-    </a>
-     <a href="https://github.com/hebertcisco/ts-npm-package-boilerplate">
-      <img alt="GitHub Downloads" src="https://img.shields.io/npm/dw/ts-npm-package-boilerplate?style=flat&color=336791" />
-    </a>
-    <a href="https://github.com/hebertcisco/ts-npm-package-boilerplate">
-      <img alt="GitHub Total Downloads" src="https://img.shields.io/npm/dt/ts-npm-package-boilerplate?color=336791&label=Total%20downloads" />
-    </a>
- <a href="https://github.com/hebertcisco/ts-npm-package-boilerplate">
-      <img alt="GitHub release" src="https://img.shields.io/github/release/hebertcisco/ts-npm-package-boilerplate.svg?style=flat&color=336791" />
-    </a>
-    <br />
-    <br />
-  <a href="https://github.com/hebertcisco/ts-npm-package-boilerplate/issues/new/choose">Report Bug</a>
-  <a href="https://github.com/hebertcisco/ts-npm-package-boilerplate/issues/new/choose">Request Feature</a>
-  </p>
- <h3 align="center">Systems on which it has been tested:</h3>
- <p align="center">
-   <a href="https://www.apple.com/br/macos/">
-      <img alt="Macos" src="https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=apple&logoColor=white&style=flat" />
-    </a>
-    <a href="https://ubuntu.com/download">
-      <img alt="Ubuntu" src="https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white&style=flat" />
-    </a>
-    <a href="https://www.microsoft.com/pt-br/windows/">
-      <img alt="Windows" src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white&style=flat" />
-    </a>
-  </p>
-<p align="center">Did you like the project? Please, considerate <a href="https://www.buymeacoffee.com/hebertcisco">a donation</a> to help improve!</p>
+import Bleed from 'nextra-theme-docs/bleed'
+import FeaturesTable from './../lib/FeaturesTable'
 
-<p align="center"><strong>TypeScript NPM Module Boilerplate</strong>✨</p>
+# @wonderlandlabs/collect
+## The Great Equalizer
+<br />
 
-[![codecov](https://codecov.io/gh/hebertcisco/ts-npm-package-boilerplate/branch/main/graph/badge.svg?token=Q9fr548J0D)](https://codecov.io/gh/hebertcisco/ts-npm-package-boilerplate)
 
-# Getting started
+[@wonderlandlabs/collect]([https://www.npmjs.com/package/@wonderlandlabs/collect)
+is a unified interface into all of JavaScripts' base compound classes: Sets, Maps,
+Objects, Arrays and even Strings.
 
-## Installation
+It allows you full interfaces into collections, their keys, and their items, as well
+as modification methods formerly exclusive to Arrays.
 
-> Clone this repository: `git clone https://github.com/hebertcisco/ts-npm-package-boilerplate`
+When a method doesn't have an explicit return value (eg `get(key)`, `first()`), it
+returns the collection itself, for currying.
 
-### Open the directory and run the script line:
+See ["Getting Started"]**(https://collect-docs.vercel.app/**get-started) for examples of creation/usage of collections
 
-```bash
-cd ts-npm-package-boilerplate 
-```
-```bash
-npm i  # or yarn
-```
-```bash
-rm -rf .git && git init && git add . && git commit -m "Initial commit" #Optional
-```
-Or create use the button "Use this template"
+See ["Why Collect Exists"](https://collect-docs.vercel.app/why) for a longer explanation of the purpose and impetus of Collect.
 
-Edit the Icon on Figma:
+<FeaturesTable>
+  <thead>
+  <tr>
+    <th>
+      Reflection
+    </th>
 
-<a href="https://www.figma.com/file/vpevGX3j9tmtW8OyLQ9eUm/ts-npm-package-boilerplate-icon?node-id=0%3A1">
-   <img alt="Figma Icon" src="https://raw.githubusercontent.com/hebertcisco/ts-npm-package-boilerplate/main/.github/images/figma-badge.png"/>
-</a>
+    <th>
+      Access
+    </th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>
+      * [`form`](https://collect-docs.vercel.app/reflection/type) string
+      * [`type`](https://collect-docs.vercel.app/reflection/type) string
+      * [`size`](https://collect-docs.vercel.app/reflection/reflection#size-whole-number-read-only) int
+      * [`value`](https://collect-docs.vercel.app/reflection/reflection#store-any-read-only) raw
+      * [`hasKey(key)`](https://collect-docs.vercel.app/reflection/introspection#haskeykey-boolean)
+      * [`hasItem(item)`](https://collect-docs.vercel.app/reflection/introspection#hasitemitem-boolean) bool
+      * [`first(count?)`](https://collect-docs.vercel.app/reflection/reflection#firstcount-number--items): item[]
+      * [`last(count?)`](https://collect-docs.vercel.app/reflection/reflection#lastcount-number--items) item[]
+      * [`firstItem`](https://collect-docs.vercel.app/reflection/reflection#firstitem) item?
+      * [`lastItem`](https://collect-docs.vercel.app/reflection/reflection#lastitem) item?
+    </td>
+    <td>
+      * [`get(key`)](https://collect-docs.vercel.app/reflection/introspection#getkey-any): item
+      * [`set(key, value)`](https://collect-docs.vercel.app/reflection/introspection#setkey-item--self)
+      * [`deleteKey(key or key[])`](https://collect-docs.vercel.app/changes#deletekeykey--key--self
+      * [`deleteItem(item or item[])`](https://collect-docs.vercel.app/changes#deleteitemitem--items--self)
+      * [`keyOf(item)`](https://collect-docs.vercel.app/reflection/introspection#keyofitem-key--undefined): key?
+      * [`keys`](https://collect-docs.vercel.app/reflection/reflection#keys-any): keys[]
+      * [`values`](https://collect-docs.vercel.app/reflection/reflection#items-any): items[]
+    </td>
+  </tr>
+  </tbody>
+  <thead>
+  <tr>
 
-## 🤝 Contributing
+    <th>
+      Loopers
+    </th>
 
-Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](issues).
+    <th>
+      Iterators
+    </th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>
+      * [`forEach(action)`](https://collect-docs.vercel.app/looping#foreachlooper-self)
+      * [`reduce(action)`](https://collect-docs.vercel.app/looping#reducelooper-initial-any) any
+      * [`map(action)`](https://collect-docs.vercel.app/looping#maplooper-self)
 
-## Show your support
+      <small>Each can be interrupted mid-stream</small>
+    </td>
+    <td>
+      * [`storeIter`](https://collect-docs.vercel.app/iterators#storeiter-iterator) iterator
+      * [`itemIter`](https://collect-docs.vercel.app/iterators#itemiter-iterator) iterator
+      * [`keyIter`](https://collect-docs.vercel.app/iterators#keyiter--iterator) iterator
+    </td>
+  </tr>
+  </tbody>
 
-Give a ⭐️ if this project helped you!
+  <thead>
+  <tr>
+    <th>
+      Append
+    </th>
+    <th>
+      Utility
+    </th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>
+      * [`addBefore(item, key?)`](https://collect-docs.vercel.app/append#addbeforeitem-key-self)
+      * [`addAfter(item, key?)`](https://collect-docs.vercel.app/append#addafteritem-key-self)
+      * [`removeFirst(count?)`](https://collect-docs.vercel.app/append#removefirstcount-item)
+      * [`removeLast(count?)`](https://collect-docs.vercel.app/append#removelastcount-item)
+    </td>
+    <td>
+      * [`clone(opts?)`](https://collect-docs.vercel.app/changes#cloneoptions-quiet-boolean-compkeys-compitems-collection)
+      * [`cloneEmpty(opts?)`](https://collect-docs.vercel.app/changes#cloneemptyoptions-quiet-boolean-compkeys-compitems-collection)
+      * [`cloneShallow(opts?)`](https://collect-docs.vercel.app/changes#cloneshallowoptions-collection)
+      * [`clear()`](https://collect-docs.vercel.app/changes#clear--self)
+      * [`sort(ordFn)`](https://collect-docs.vercel.app/changes#sortsortfn-comparatorfn-self)
+      * [`change(fn | neStore)`](https://collect-docs.vercel.app/changes#changereplacer--store--storetype--void-collection-self)
+    </td>
+  </tr>
+  </tbody>
+</FeaturesTable>
 
-Or buy me a coffee 🙌🏾
+![](https://collect-docs.vercel.app/public/robots_aff.png)
 
-<a href="https://www.buymeacoffee.com/hebertcisco">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=hebertcisco&button_colour=FFDD00&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=ffffff" />
-</a>
+## Highlights
 
-## 📝 License
+* **custom comparators**: store and look up keys with matching functions you can inject yourself
+* (WIP) combine (union, difference, intersect) contents of any collections into the store type of your choice.
+* **Robust**: no caching -- only a single value is stored in each wrapper
+* **Broad**: allows consistent access for Arrays, Maps, Objects, strings and Sets
+* **Very little external dependency**: `lodash.cloneDeep` and `lodash.toString` are used; otherwise, this library uses 100% pure Javascript
+* **Cross-target appends**: Adds push/pop/shift/unshift analogs (Appenders) to all classes
 
-Copyright © 2022 [Hebert F Barros](https://github.com/hebertcisco).<br />
-This project is [MIT](LICENSE) licensed.
+Most fundamentally: Collect is **CONSISTENT**. Every version has complete iterators, you can search by key AND by item,
+and full loopers for every type of content. As Javascript evolves, minor features just don't seem to get applied across all
+compound types
+
+## 1.0 release
+
+The 1.0 release is a _complete rebuild_ of collect. the interface is meant to be almost completely identical
+to the pre-1.0 release. here are a few notable changes:
+
+1. **the core value is stored in the `.value` property instead of in store**. 
+2. **the value formerly called `items` is now referred to as `values`.
+3. **the technique to stop iterator functions(`reduce`, `map`, `forEach`) is different. (TLDR: throw `{$STOP: true}`)
+4. **`cloneShallow()` has been replaced with `.clone(true)`.** 
+
+### Under the hood
+
+Previously, multiple classes were created for each possible type of inner value. This precludes changing
+the type of value stored (via change) from, say, an array to a Set. It also vastly complicated the TypeScript.
+
+Instead, in 1.0, we dynamically choose a handler based on the form of the content on the fly. 
+
+Also, the type detection system has been moved to @wonderlandlabs/walrus, an independent module. 
+
