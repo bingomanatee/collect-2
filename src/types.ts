@@ -1,7 +1,9 @@
 export type collectOpts = {
-  lockType?: boolean
+  lockType?: boolean;
+  debug?: boolean
 }
 export type collectObj = {
+  opts?: {[key: string] : any};
   value: any;
   store: any;
   type: string;
@@ -16,6 +18,7 @@ export type collectObj = {
   iter: IterableIterator<[any, any]>;
   forEach: (iterFn: iterFunction) => collectObj;
   map: (iterFn: iterFunction) => any;
+  reduce: (iterFn: reduceFunction, initial?: any) => any;
   clone: () => collectObj;
   get: (key: any) => any;
   set: (key: any, value: any) => collectObj;
@@ -33,6 +36,7 @@ export type collectObj = {
 
 export type solverFn = (collect: collectObj, name?: string) => any;
 
+export type reduceFunction = (memo: any, value: any, key: any, collect: collectObj) => any;
 export type iterFunction = (value: any, key: any, collect: collectObj) => any;
 
 export interface solverObj {
@@ -49,6 +53,7 @@ export interface solverObj {
   // iteration
   iter(c: collectObj) : IterableIterator<[any, any]>;
   forEach(c: collectObj, iter: iterFunction) : void;
+  reduce(c: collectObj, iter: reduceFunction, initial?: any): any;
   map (c: collectObj, iterFn: iterFunction) : any;
   clone(c: collectObj) : collectObj;
   clear(c: collectObj) : void;

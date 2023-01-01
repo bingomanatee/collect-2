@@ -104,7 +104,7 @@ describe('Collect', () => {
         expect(c([...value]).set(2, 50).value).toEqual([1, 2, 50, 8]);
       });
       it('should update item with an out of range key', () => {
-        expect(c([...value]).set(6, 50).value).toEqual([1, 2, 4, 8, , , 50]);
+        expect(c([...value]).set(6, 50).value).toEqual([1, 2, 4, 8, undefined, undefined, 50]);
       });
       it('should return throw with an negative key', () => {
         expect(() => c(value).set(-10, 50)).toThrow();
@@ -212,13 +212,35 @@ describe('Collect', () => {
       });
     });
 
-    describe.skip('set', () => {
+    describe('set', () => {
+      const values = new Set([1, 2, 4, 8, 16]);
 
+      it('should add an item before the array', () => {
+        expect(Array.from(c(values).addBefore(4).values)).toEqual([4, 1, 2, 8, 16])
+      })
+      it('should add an item before the array at an index', () => {
+        expect(Array.from(c(values).addBefore(7, 2).values)).toEqual([1, 2, 7, 4, 8, 16])
+      })
+      it('should add an item before the array at a larger index', () => {
+        expect(Array.from(c(values).addBefore(4, 20).values)).toEqual([1, 2, 8, 16, 4]);
+      })
     });
 
-    describe.skip('object', () => {
-
-    })
+    describe('object', () => {
+      it('should throw without a key', () => {
+        expect(() => c({a: 1, b: 2, c: 3, d: 4}).addBefore(3)).toThrow();
+      });
+      it('should add a new key', () => {
+        expect( c({a: 1, b: 2, c: 3, d: 4}).addBefore(10, 'z').value).toEqual(
+          {z: 10, a: 1, b: 2, c: 3, d: 4}
+        );
+      });
+      it('should replace an existing key', () => {
+        expect( c({a: 1, b: 2, c: 3, d: 4}).addBefore(10, 'c').value).toEqual(
+          {c: 10, a: 1, b: 2, d: 4}
+        );
+      });
+    });
   });
   describe('addAfter', () => {
     describe('void', () => {
@@ -272,12 +294,46 @@ describe('Collect', () => {
       });
     });
 
-    describe.skip('set', () => {
+    describe('set', () => {
+      const values = new Set([1, 2, 4, 8, 16]);
 
+      it('should add an item after the array', () => {
+        expect(Array.from(c(values).addAfter(4).value)).toEqual([1, 2, 8, 16, 4])
+      })
+      it('should add an item after the array at an index', () => {
+        expect(Array.from(c(values).addAfter(7, 2).value)).toEqual([1, 2, 4, 7, 8, 16])
+      })
+      it('should add an item after the array at a larger index', () => {
+        expect(Array.from(c(values).addAfter(4, 20).value)).toEqual([1, 2, 8, 16, 4]);
+      })
     });
 
-    describe.skip('object', () => {
+    describe('object', () => {
+      const values = {
+        a: 100,
+        b: 200,
+        c: 50,
+        d: 400
+      }
 
+      it('should throw without a key', () => {
+        expect(() => c({ ...values }).addAfter(500)).toThrow();
+      });
+      it('should add a key after the other items in a object (no existing)', () => {
+        expect(c({ ...values }).addAfter(500, 'e').value).toEqual(
+          {...values, e: 500}
+        )
+      });
+      it('should add a key after the other items in a object (over existing)', () => {
+        expect(c({...values}).addAfter(500, 'b').value).toEqual(
+          {
+            a: 100,
+            c: 50,
+            d: 400,
+            b: 500
+          }
+        );
+      });
     })
   });
 });

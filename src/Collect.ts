@@ -1,4 +1,4 @@
-import { collectObj, collectOpts, iterFunction, solverFn } from "./types";
+import { collectObj, collectOpts, iterFunction, reduceFunction, solverFn } from "./types";
 import { type } from "@wonderlandlabs/walrus";
 import { makeSolvers, cf } from "./solvers";
 import clone from "lodash.clone";
@@ -15,7 +15,7 @@ export class Collect implements collectObj {
     this.opts = opts;
   }
 
-  opts?: collectOpts;
+  public opts?: collectOpts;
 
   private _value?: any;
   get value(): any {
@@ -154,5 +154,9 @@ export class Collect implements collectObj {
   addAfter(itemOrItems: any, key?: any) {
     solvers[this.form]?.addAfter(this, itemOrItems, key);
     return this;
+  }
+
+  reduce(iter: reduceFunction, initial?: any) {
+    return solvers[this.form].reduce(this, iter, initial);
   }
 }

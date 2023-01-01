@@ -260,7 +260,7 @@ describe('Collect', () => {
           expect(c(values).first(3)).toEqual([1, -1, 4])
         })
       })
-      describe.skip('set', () => {
+      describe('set', () => {
         const values = [1, 2, 3, 5, 7, 9];
         it('should return firstItem', () => {
           expect(c(new Set(values)).firstItem).toEqual(1);
@@ -329,7 +329,7 @@ describe('Collect', () => {
           expect(c(values).last(3)).toEqual([4, 3, 4])
         })
       })
-      describe.skip('set', () => {
+      describe('set', () => {
         const values = [1, 2, 3, 5, 7, 9];
         it('should return lastItem', () => {
           expect(c(new Set(values)).lastItem).toEqual(9);

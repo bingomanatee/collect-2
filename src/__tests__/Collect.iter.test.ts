@@ -394,7 +394,211 @@ describe('Collect', () => {
         });
       });
     })
-  })
+
+    describe('reduce', () => {
+
+      const sumReducer = (memo: number | undefined, value: number) => ((memo || 0) + value);
+
+      describe('void', () => {
+        it('should throw', () => {
+          expect(() => c().reduce(() => {
+          })).toThrow();
+        })
+      })
+      describe('function', () => {
+        it('should throw', () => {
+          expect(() => c(() => {
+          }).reduce(() => {
+          })).toThrow();
+        })
+      })
+      describe('scalar', () => {
+        it('should throw', () => {
+          expect(() => c(100).reduce(() => {
+          })).toThrow();
+        })
+      })
+
+      describe('array', () => {
+        it('should return a summary', () => {
+          const base = c([1, 2, 4, 8]);
+          const sum = base.reduce(sumReducer);
+          expect(sum).toEqual(15);
+          expect(base.value).toEqual([1, 2, 4, 8]);
+        });
+
+        it('should return a summary -- with an initializer', () => {
+          const base = c([1, 2, 4, 8]);
+          const sum = base.reduce(sumReducer, 5);
+          expect(sum).toEqual(20);
+          expect(base.value).toEqual([1, 2, 4, 8]);
+        });
+
+        it('allow interruption', () => {
+          const base = c([1, 2, 4, 8, 16, 32]);
+          const map = base.reduce((memo, n) => {
+            if (n > 4) {
+              throw { $STOP: true }
+            }
+            return (memo || 0) + n;
+          });
+          expect(map).toEqual(7);
+          expect(base.value).toEqual([1, 2, 4, 8, 16, 32]);
+        });
+
+        it('allow interruption - with a value', () => {
+          const base = c([1, 2, 4, 8, 16, 32]);
+          const map = base.reduce((memo, n) => {
+            if (n > 4) {
+              throw { $STOP: true, value: 100 + memo }
+            }
+            return (memo || 0) + n;
+          });
+          expect(map).toEqual(107);
+          expect(base.value).toEqual([1, 2, 4, 8, 16, 32]);
+        });
+      })
+      describe('map', () => {
+
+        const initial = new Map([
+          ['a', 2],
+          ['b', 4],
+          ['c', 6],
+          ['d', 8],
+          ['e', 10],
+        ])
+
+        const source = new Map(initial);
+
+        it('should return a summary', () => {
+          const base = c(source);
+          const sum = base.reduce(sumReducer);
+          expect(sum).toEqual(30);
+          expect(base.value).toEqual(initial);
+        });
+
+        it('should return a summary -- with an initializer', () => {
+          const base = c(source);
+          const sum = base.reduce(sumReducer, 5);
+          expect(sum).toEqual(35);
+          expect(base.value).toEqual(initial);
+        });
+
+        it('allow interruption', () => {
+          const base = c(source);
+          const map = base.reduce((memo, n) => {
+            if (n > 4) {
+              throw { $STOP: true }
+            }
+            return (memo || 0) + n;
+          });
+          expect(map).toEqual(6);
+          expect(base.value).toEqual(initial);
+        });
+
+        it('allow interruption - with a value', () => {
+          const base = c(source);
+          const map = base.reduce((memo, n) => {
+            if (n > 4) {
+              throw { $STOP: true, value: 100 + memo }
+            }
+            return (memo || 0) + n;
+          });
+          expect(map).toEqual(106);
+          expect(base.value).toEqual(initial);
+        });
+      })
+      describe('set', () => {
+        const initial = new Set([2, 4, 6, 8, 10]);
+        const source = new Set(initial);
+        it('should return a summary', () => {
+          const base = c(source);
+          const sum = base.reduce(sumReducer);
+          expect(sum).toEqual(30);
+          expect(base.value).toEqual(initial);
+        });
+
+        it('should return a summary -- with an initializer', () => {
+          const base = c(source);
+          const sum = base.reduce(sumReducer, 5);
+          expect(sum).toEqual(35);
+          expect(base.value).toEqual(initial);
+        });
+
+        it('allow interruption', () => {
+          const base = c(source);
+          const map = base.reduce((memo, n) => {
+            if (n > 4) {
+              throw { $STOP: true }
+            }
+            return (memo || 0) + n;
+          });
+          expect(map).toEqual(6);
+          expect(base.value).toEqual(initial);
+        });
+
+        it('allow interruption - with a value', () => {
+          const base = c(source);
+          const map = base.reduce((memo, n) => {
+            if (n > 4) {
+              throw { $STOP: true, value: 100 + memo }
+            }
+            return (memo || 0) + n;
+          });
+          expect(map).toEqual(106);
+          expect(base.value).toEqual(initial);
+        });
+      });
+      describe('object', () => {
+        const initial = {
+          a: 2,
+          b: 4,
+          c: 6,
+          d: 8,
+          e: 10
+        }
+        const source = {...initial};
+
+        it('should return a summary', () => {
+          const base = c(source);
+          const sum = base.reduce(sumReducer);
+          expect(sum).toEqual(30);
+          expect(base.value).toEqual(initial);
+        });
+
+        it('should return a summary -- with an initializer', () => {
+          const base = c(source);
+          const sum = base.reduce(sumReducer, 5);
+          expect(sum).toEqual(35);
+          expect(base.value).toEqual(initial);
+        });
+
+        it('allow interruption', () => {
+          const base = c(source);
+          const map = base.reduce((memo, n) => {
+            if (n > 4) {
+              throw { $STOP: true }
+            }
+            return (memo || 0) + n;
+          });
+          expect(map).toEqual(6);
+          expect(base.value).toEqual(initial);
+        });
+
+        it('allow interruption - with a value', () => {
+          const base = c(source);
+          const map = base.reduce((memo, n) => {
+            if (n > 4) {
+              throw { $STOP: true, value: 100 + memo }
+            }
+            return (memo || 0) + n;
+          });
+          expect(map).toEqual(106);
+          expect(base.value).toEqual(initial);
+        });
+      });
+    });
+  });
 });
 /*
     describe('void', () => {

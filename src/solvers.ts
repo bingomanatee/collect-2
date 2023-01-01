@@ -1,4 +1,4 @@
-import { collectObj, createFactory, iterFunction, solverSpace } from "./types";
+import { collectObj, createFactory, iterFunction, reduceFunction, solverSpace } from "./types";
 import { Stop } from "./Stop";
 
 const iterate = (c: collectObj, iterFn: iterFunction) => {
@@ -47,6 +47,25 @@ const mutate = (c: collectObj, iterFn: iterFunction) => {
   } while (iterations <= size);
   return c2.value;
 }
+const select = (c: collectObj, reduceFn: reduceFunction, initial?: any) => {
+  let memo =   initial;
+
+  for (const [key,value] of c.iter) {
+    try {
+      memo = reduceFn(memo, value, key, c)
+    } catch (err: any) {
+      if (err.$STOP) {
+        if ('value' in err) {
+          memo = err.value;
+        }
+        break;
+      }
+    }
+  }
+
+  return memo;
+}
+
 const allItemKeys = (c: collectObj, item: any) => {
   const out = [];
   for (const [key, iItem] of c.iter) {
@@ -108,6 +127,9 @@ export const makeSolvers = () => {
     },
     map(c: collectObj, iter: iterFunction) {
       throw new Error(`cannot iterate over ${c.form}`);
+    },
+    reduce(c: collectObj, iter: reduceFunction, initial?: any) {
+      throw new Error(`cannot reduce ${c.form}`);
     },
     clone(c: collectObj) {
       return cf.create(c.value);
@@ -176,6 +198,9 @@ export const makeSolvers = () => {
   const loopingSolver = {
     map(c: collectObj, iterFn: iterFunction) {
       return mutate(c, iterFn);
+    },
+    reduce(c: collectObj, redFn: reduceFunction, memo: any) {
+      return select(c, redFn, memo);
     },
     forEach(c: collectObj, iterFn: iterFunction) {
       iterate(c, iterFn);
@@ -453,10 +478,17 @@ export const makeSolvers = () => {
       return (c.value as Set<any>).has(item);
     },
     addBefore(c: collectObj, itemOrItems: any, key?: number) {
-      c._$(new Set(cf.create(c.values).addBefore(itemOrItems, key).value));
+      const standin = cf.create(c.values);
+      standin.deleteItem(itemOrItems);
+
+      standin.addBefore(itemOrItems, key);
+      c._$(new Set(standin.values));
     },
     addAfter(c: collectObj, itemOrItems: any, key?: number) {
-      c._$(new Set(cf.create(c.values).addAfter(itemOrItems, key).value));
+      const standin = cf.create(c.values);
+      standin.deleteItem(itemOrItems);
+      standin.addAfter(itemOrItems, key);
+      c._$(new Set(standin.values));
     }
   }
 
