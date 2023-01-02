@@ -60,9 +60,9 @@ describe('Collect', () => {
           }
 
           expect(out).toEqual([
-            ['a', 'a'],
-            ['b', 'b'],
-            ['c', 'c']
+            [0, 'a'],
+            [1, 'b'],
+            [2, 'c']
           ]);
         })
       })
@@ -173,32 +173,32 @@ describe('Collect', () => {
         const setObj = new Set([10, 20, 30, 40, 50, 60]);
         it('should iterate through values', () => {
           let sum = 0;
-          c(setObj).forEach((v, i) => {
-            sum += v + i
+          c(setObj).forEach((v) => {
+            sum += v;
           });
-          expect(sum).toEqual((10 + 20 + 30 + 40 + 50 + 60) * 2);
+          expect(sum).toEqual((10 + 20 + 30 + 40 + 50 + 60));
         });
 
         it('can be interrupted with $STOP', () => {
           let sum = 0;
-          c(setObj).forEach((v, i) => {
-            sum += v + i;
-            if (i > 30) {
+          c(setObj).forEach((v) => {
+            sum += v;
+            if (v > 30) {
               return { $STOP: true };
             }
           });
-          expect(sum).toEqual((10 + 20 + 30 + 40) * 2);
+          expect(sum).toEqual((10 + 20 + 30 + 40));
         });
 
         it('can be interrupted with thrown $STOP', () => {
           let sum = 0;
-          c(setObj).forEach((v, i) => {
-            sum += v + i;
-            if (i > 30) {
+          c(setObj).forEach((v) => {
+            sum += v;
+            if (v > 30) {
               throw { $STOP: true };
             }
           });
-          expect(sum).toEqual((10 + 20 + 30 + 40) * 2);
+          expect(sum).toEqual((10 + 20 + 30 + 40));
         });
       })
 

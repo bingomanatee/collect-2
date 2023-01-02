@@ -11,10 +11,18 @@ const solvers = makeSolvers();
 export class Collect implements collectObj {
   constructor(value?: any, opts?: collectOpts) {
     this._value = value;
-    this.opts = opts;
+    if (opts) this.opts = opts;
+  }
+  
+  get opts(): collectOpts {
+    return this._opts || {}
   }
 
-  public opts?: collectOpts;
+  set opts(value: collectOpts) {
+    this._opts = value
+  }
+
+  private _opts?: collectOpts;
 
   private _value?: any;
   get value(): any {
@@ -76,8 +84,8 @@ export class Collect implements collectObj {
     return solvers[this.form]?.hasKey(this, key);
   }
 
-  hasItem(item: any) {
-    return solvers[this.form]?.hasItem(this, item);
+  hasValue(item: any) {
+    return solvers[this.form]?.hasValue(this, item);
   }
 
   first(count?: number) {
@@ -117,8 +125,8 @@ export class Collect implements collectObj {
 
   // ----------- mutation
 
-  clone(shallow?: boolean): collectObj {
-    return solvers[this.form]?.clone(this, shallow);
+  clone(deep?: boolean): collectObj {
+    return solvers[this.form]?.clone(this, deep);
   }
 
   cloneEmpty(): collectObj {
@@ -171,4 +179,11 @@ export class Collect implements collectObj {
     return this;
   }
 
+  sameKeys(a: any, b: any) {
+    return this.opts.keyComp? this.opts.keyComp(a, b) : a === b;
+  }
+
+  sameValues(a: any, b: any) {
+    return this.opts.valueComp? this.opts.valueComp(a, b) : a === b;
+  }
 }

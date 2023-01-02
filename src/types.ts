@@ -1,9 +1,12 @@
 export type collectOpts = {
   lockType?: boolean;
-  debug?: boolean
+  debug?: boolean; 
+  keyComp?: compFn;
+  valueComp?: compFn;
 }
+
 export type collectObj = {
-  opts?: {[key: string] : any};
+  opts: collectOpts;
   value: any;
   store: any;
   type: string;
@@ -13,13 +16,13 @@ export type collectObj = {
   items: any[];
   size: number;
   hasKey: (key: any) => boolean;
-  hasItem: (item: any) => boolean;
+  hasValue: (item: any) => boolean;
   change(v: any): void; // an internal method to update the value - not for general use.
   iter: IterableIterator<[any, any]>;
   forEach: (iterFn: iterFunction) => collectObj;
   map: (iterFn: iterFunction) => any;
   reduce: (iterFn: reduceFunction, initial?: any) => any;
-  clone: (shallow?: boolean) => collectObj;
+  clone: (deep?: boolean) => collectObj;
   cloneEmpty: () => collectObj;
   get: (key: any) => any;
   set: (key: any, value: any) => collectObj;
@@ -34,12 +37,15 @@ export type collectObj = {
   addBefore(item: any, key?: any) : collectObj;
   addAfter(item: any, key?: any) : collectObj;
   sort(sf?: sortFn) : collectObj;
+  sameValues(a: any, b: any) : boolean;
+  sameKeys(a: any, b: any) : boolean;
 }
 
 export type solverFn = (collect: collectObj, name?: string) => any;
 export type reduceFunction = (memo: any, value: any, key: any, collect: collectObj) => any;
 export type iterFunction = (value: any, key: any, collect: collectObj) => any;
 export type sortFn = (a: any, b: any) => number;
+export type compFn = (a: any, b: any) => boolean;
 
 export interface solverObj {
   // introspection
@@ -50,14 +56,14 @@ export interface solverObj {
   set(c: collectObj, key: any, value: any): void;
   get(c: collectObj, key: any): any;
   hasKey(c: collectObj, key: any): boolean;
-  hasItem(c: collectObj, item: any): boolean;
+  hasValue(c: collectObj, item: any): boolean;
 
   // iteration
   iter(c: collectObj) : IterableIterator<[any, any]>;
   forEach(c: collectObj, iter: iterFunction) : void;
   reduce(c: collectObj, iter: reduceFunction, initial?: any): any;
   map (c: collectObj, iterFn: iterFunction) : any;
-  clone(c: collectObj, shallow?: boolean) : collectObj;
+  clone(c: collectObj, deep?: boolean) : collectObj;
   clear(c: collectObj) : void;
   sort(c: collectObj, sorter?: sortFn) : void;
   keyOf(c: collectObj, key: any, allKeys?: boolean): any;

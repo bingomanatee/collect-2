@@ -70,28 +70,59 @@ const select = (c: collectObj, reduceFn: reduceFunction, initial?: any) => {
 const allItemKeys = (c: collectObj, item: any) => {
   const out = [];
   for (const [key, iItem] of c.iter) {
-    if (iItem === item) {
+    if (c.sameKeys(item, iItem)) {
       out.push(key)
     }
   }
   return out;
 }
-const testNumericKey = (key: any) => {
+const testNumericKey = (key: any, returnBool?: boolean): boolean => {
   if (typeof key !== 'number') {
+    if (returnBool) {
+      return false;
+    }
     throw new Error(`non numeric key passed to get: ${key}`)
   }
   if (!Number.isFinite(key)) {
+    if (returnBool) {
+      return false;
+    }
     throw new Error('infinite keys are not allowed');
   }
   if (key < 0 || !Number.isInteger(key)) {
+    if (returnBool) {
+      return false;
+    }
     throw new Error(`key ${key} must be a whole number`);
   }
+  return true;
 }
 
 export const cf: createFactory = {
   create: (value: any) => {
     throw new Error('must be replaced with a real creator')
   }
+}
+
+export const key4key = (c: collectObj, key: any, debug?: boolean) => {
+  if (c.opts.keyComp) {
+    for (const [iKey] of c.iter) {
+      if (debug) {
+        console.log('---- key4key: comparing ', iKey, 'to', key);
+      }
+      if (c.sameKeys(key, iKey)) {
+        if (debug) {
+          console.log('--- key4key comparator:', c.opts.keyComp?.toString());
+          console.log('---- key4key: found', iKey, ' to match ', key);
+        }
+        return iKey;
+      }
+    }
+  }
+  if (debug) {
+    console.log('---- key4key - no match for', key);
+  }
+  return key;
 }
 
 export const makeSolvers = () => {
@@ -120,7 +151,7 @@ export const makeSolvers = () => {
     hasKey() {
       return false;
     },
-    hasItem() {
+    hasValue() {
       return false;
     },
     iter(c: collectObj): IterableIterator<[any, any]> {
@@ -183,7 +214,13 @@ export const makeSolvers = () => {
       throw new Error('size must be overridden over IntegerKeySolver')
     },
     hasKey(c: collectObj, key: any) {
-      testNumericKey(key);
+      if (c.opts.keyComp) {
+        key = key4key(c, key);
+      }
+
+      if (!testNumericKey(key, true)) {
+        return false;
+      }
       return key < c.size
     },
     first(c: collectObj, count?: number) {
@@ -265,8 +302,19 @@ export const makeSolvers = () => {
       return c.value.length;
     },
     get(c, key) {
-      testNumericKey(key);
-      return c.value[key];
+      try {
+        testNumericKey(key);
+        return c.value[key];
+      } catch (err) {
+        if (c.opts.keyComp) {
+          for (const [iKey, value] of c.iter) {
+            if (c.sameKeys(iKey, key)) {
+              return value;
+            }
+          }
+        }
+        throw err;
+      }
     },
     values(c: collectObj) {
       return [...c.value];
@@ -274,11 +322,11 @@ export const makeSolvers = () => {
     iter(c: collectObj) {
       return c.value.entries();
     },
-    clone(c: collectObj, shallow) {
-      if (shallow) {
-        return cf.create([...c.value]);
+    clone(c: collectObj, deep) {
+      if (!deep) {
+        return cf.create([...c.value], c.opts);
       }
-      return cf.create(clone(c.value))
+      return cf.create(clone(c.value), c.opts)
     },
     clear(c: collectObj) {
       c.change([])
@@ -364,7 +412,7 @@ export const makeSolvers = () => {
       }
       c.change(list)
     },
-    hasItem(c: collectObj, item: any) {
+    hasValue(c: collectObj, item: any) {
       return (c.value as Array<any>).includes(item);
     },
     addBefore(c: collectObj, itemOrItems: any, key?: any) {
@@ -451,11 +499,16 @@ export const makeSolvers = () => {
       }
       c.change(new Set(values));
     },
-    clone(c: collectObj, shallow) {
-      if (shallow) {
-        return cf.create(new Set(c.value));
+    hasKey(c: collectObj, key) {
+      const c2 = c.clone();
+      c2.change(c.values);
+      return c2.hasKey(key);
+    },
+    clone(c: collectObj, deep) {
+      if (!deep) {
+        return cf.create(new Set(c.value), c.opts);
       }
-      return cf.create(clone(c.value));
+      return cf.create(clone(c.value), c.opts);
     },
     clear(c: collectObj) {
       c.value.clear();
@@ -465,7 +518,10 @@ export const makeSolvers = () => {
       c.change(new Set(sorted));
     },
     iter(c: collectObj) {
-      return (c.value as Set<any>).entries()
+      return c.values.entries();
+    },
+    values(c) {
+      return [...c.value.values()];
     },
     map(c: collectObj, iterFn: iterFunction) {
       const out = new Set();
@@ -488,7 +544,7 @@ export const makeSolvers = () => {
       if (allKeys) {
         return allItemKeys(c, item);
       }
-      return cf.create(c.values).keyOf(item);
+      return cf.create(c.values, c.opts).keyOf(item);
     },
     deleteKey(c: collectObj, keyOrKeys: any) {
       const newSet = new Set(c.value);
@@ -515,7 +571,7 @@ export const makeSolvers = () => {
 
       c.change(list)
     },
-    hasItem(c: collectObj, item: any) {
+    hasValue(c: collectObj, item: any) {
       return (c.value as Set<any>).has(item);
     },
     addBefore(c: collectObj, itemOrItems: any, key?: number) {
@@ -526,7 +582,7 @@ export const makeSolvers = () => {
       c.change(new Set(standin.values));
     },
     addAfter(c: collectObj, itemOrItems: any, key?: number) {
-      const standin = cf.create(c.values);
+      const standin = cf.create(c.values, c.opts);
       standin.deleteItem(itemOrItems);
       standin.addAfter(itemOrItems, key);
       c.change(new Set(standin.values));
@@ -540,16 +596,34 @@ export const makeSolvers = () => {
       return Array.from(c.value.keys());
     },
     get(c, key) {
-      return c.value.get(key);
+      if (c.opts.keyComp) {
+        return c.value.get(key4key(c, key));
+      } else {
+        return c.value.get(key);
+      }
     },
     hasKey(c, key) {
-      return c.value.has(key);
+      if (c.value.has(key)) {
+        return true;
+      }
+      if (c.opts.keyComp) {
+        for (const [iKey] of c.iter) {
+          if (c.sameKeys(key, iKey)) {
+            return true
+          }
+        }
+      }
+      return false;
     },
     set(c, key: any, value: any) {
-      c.value.set(key, value);
+      if (c.opts.keyComp) {
+        c.value.set(key4key(c, key), value);
+      } else {
+        c.value.set(key, value);
+      }
     },
-    clone(c: collectObj, shallow) {
-      if (shallow) {
+    clone(c: collectObj, deep) {
+      if (!deep) {
         return cf.create(new Map(c.value));
       }
       return cf.create(clone(c.value));
@@ -570,7 +644,7 @@ export const makeSolvers = () => {
         return allItemKeys(c, item);
       }
       for (const [key, value] of c.iter) {
-        if (item === value) {
+        if (c.sameValues(item, value)) {
           return key;
         }
       }
@@ -579,12 +653,15 @@ export const makeSolvers = () => {
     deleteKey(c: collectObj, keyOrKeys: any) {
       const newMap = new Map(c.value);
       if (Array.isArray(keyOrKeys)) {
-        keyOrKeys.forEach(((key) => {
+        if (c.opts.keyComp) {
+          keyOrKeys = keyOrKeys.map((key) => key4key(c, key))
+        }
+        keyOrKeys.forEach(((key: any) => {
           newMap.delete(key)
         }))
         c.change(newMap);
       } else if (c.hasKey(keyOrKeys)) {
-        (c.value as Map<any, any>).delete(keyOrKeys)
+        (c.value as Map<any, any>).delete(key4key(c, keyOrKeys))
       }
     },
     deleteItem(c: collectObj, itemOrItems: any, once?: boolean) {
@@ -607,7 +684,7 @@ export const makeSolvers = () => {
           }
         } else {
           for (const [key, item] of c.iter) {
-            if (itemOrItems === item) {
+            if (c.sameValues(itemOrItems, item)) {
               map.delete(key);
             }
           }
@@ -616,7 +693,7 @@ export const makeSolvers = () => {
 
       c.change(map);
     },
-    hasItem(c: collectObj, item: any) {
+    hasValue(c: collectObj, item: any) {
       return (c.value as Map<any, any>).has(item);
     },
     first(c: collectObj, count?: number) {
@@ -635,28 +712,24 @@ export const makeSolvers = () => {
       if (key === undefined) {
         throw new Error('addBefore for maps requires key');
       }
-
-      const map: Map<any, any> = new Map([[key, item]]);
-      for (const [iKey, value] of c.iter) {
-        if (key !== iKey) {
-          map.set(iKey, value);
-        }
+      if (c.hasKey(key)) {
+        return c.set(key4key(c, key), item);
       }
+      const map = new Map(
+        [[key, item], ...c.value.entries()]
+      );
       c.change(map);
     },
-
     addAfter(c: collectObj, item: any, key?: number) {
       if (key === undefined) {
         throw new Error('addBefore for maps requires key');
       }
-
-      const map: Map<any, any> = new Map([]);
-      for (const [iKey, value] of c.iter) {
-        if (key !== iKey) {
-          map.set(iKey, value);
-        }
+      if (c.hasKey(key)) {
+        return c.set(key4key(c, key), item);
       }
-      map.set(key, item);
+      const map = new Map(
+        [...c.value.entries(), [key, item]]
+      );
       c.change(map);
     }
   }
@@ -673,28 +746,59 @@ export const makeSolvers = () => {
       return c.keys.length;
     },
     get(c: collectObj, key) {
-      return c.value[key];
+      if (key in c.value) {
+        return c.value[key];
+      } else if (c.opts.keyComp) {
+        for (const [iKey, value] of c.iter) {
+          if (c.sameKeys(key, iKey)) {
+            return value;
+          }
+        }
+        return undefined;
+      }
     },
     hasKey(c: collectObj, key) {
+      if (c.opts.keyComp) {
+        for (const [iKey] of c.iter) {
+          if (c.sameKeys(iKey, key)) {
+            return true;
+          }
+        }
+        return false;
+      }
       return key in c.value;
     },
-    hasItem(c: collectObj, item: any) {
-      for (const [key, kItem] of c.iter) {
-        if (kItem === item) {
+    hasValue(c: collectObj, item: any) {
+      for (const [_key, kItem] of c.iter) {
+        if (c.sameValues(kItem, item)) {
           return true;
         }
       }
       return false;
     },
     set(c: collectObj, key: any, value: any) {
-      c.change({ ...c.value, [key]: value });
+      const newObj = { ...c.value };
+      if (key in c.value) {
+        c.value[key] = value;
+      } else if (c.opts.keyComp) {
+        for (const [iKey] of c.iter) {
+          if (c.sameKeys(iKey, key)) {
+            newObj[iKey] = value;
+            c.change(newObj);
+            return;
+          }
+        }
+      }
+
+      newObj[key] = value;
+      c.change(newObj)
     },
     iter(c: collectObj): IterableIterator<[any, any]> {
       return Object.entries(c.value)[Symbol.iterator]();
     },
-    clone(c: collectObj, shallow) {
-      if (shallow) {
-        return cf.create({ ...c.value });
+    clone(c: collectObj, deep) {
+      if (!deep) {
+        return cf.create({ ...c.value }, c.opts);
       }
       return cf.create(clone(c.value));
     },
@@ -702,9 +806,9 @@ export const makeSolvers = () => {
       c.change({})
     },
     sort(c: collectObj, sorter?: sortFn) {
-      const entries : [key: string, value: any][] = [...Object.entries(c.value)].sort(sorter);
-      const obj: {[key: string] : any } = {};
-      entries.forEach(([key , value]) => obj[key] = value);
+      const entries: [key: string, value: any][] = [...Object.entries(c.value)].sort(sorter);
+      const obj: { [key: string]: any } = {};
+      entries.forEach(([key, value]) => obj[key] = value);
       c.change(obj);
     },
     keyOf(c: collectObj, item, allKeys?: boolean) {
@@ -712,7 +816,7 @@ export const makeSolvers = () => {
         return allItemKeys(c, item);
       }
       for (const [key, value] of c.iter) {
-        if (item === value) {
+        if (c.sameValues(item, value)) {
           return key;
         }
       }
@@ -765,7 +869,9 @@ export const makeSolvers = () => {
       if (key === undefined) {
         throw new Error('addBefore for objects requires key');
       }
-
+      if (c.hasKey(key)) {
+        return c.set(key, item);
+      }
       const value = { ...c.value };
       delete value[key];
       c.change({ [key]: item, ...value });
@@ -773,6 +879,10 @@ export const makeSolvers = () => {
     addAfter(c: collectObj, item: any, key?: number) {
       if (key === undefined) {
         throw new Error('addBefore for objects requires key');
+      }
+
+      if (c.hasKey(key)) {
+        return c.set(key, item);
       }
 
       const value = { ...c.value };

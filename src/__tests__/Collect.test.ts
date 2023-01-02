@@ -1,5 +1,21 @@
 import { Collect, c } from '../index';
 
+const toInt = (n: any): any => {
+  if (typeof n === 'string') {
+    const i = toInt(Number.parseInt(n, 10));
+  //  console.log('converting ', n, 'to int', i);
+    return i;
+  }
+  if (typeof n === 'number') {
+    return Math.floor(n);
+  }
+  return n;
+}
+const intComp = (a: any, b: any) => {
+ // console.log('intComp comparing ', a, 'and', b);
+  return toInt(a) === toInt(b);
+}
+const caseInsensitiveComp = (a: any, b: any) => `${a}`.toLowerCase() === `${b}`.toLowerCase();
 
 describe('Collect', () => {
 
@@ -144,6 +160,70 @@ describe('Collect', () => {
             .toEqual(4);
         })
       })
+      describe('object', () => {
+        it('should return 0 if empty', () => {
+          expect(new Collect({}).size).toEqual(0);
+        })
+        it('should return key count', () => {
+          expect(new Collect({ x: 1, y: -1, z: 0 }).size).toEqual(3);
+        })
+      })
+    });
+    describe('hasKey', () => {
+      describe('void', () => {
+        it('should always return 0', () => {
+          expect(new Collect().size).toEqual(0);
+        })
+      })
+      describe('function', () => {
+        it('should always return 0', () => {
+          expect(new Collect().size).toEqual(0);
+        })
+      })
+      describe('scalar', () => {
+        it('should always return 0', () => {
+          expect(new Collect('100').size).toEqual(0);
+        })
+      })
+      describe('array', () => {
+        const value = ['a', 'b', 'c'];
+
+        it('should detect if key is in array', () => {
+          expect(c(value).hasKey(1)).toBeTruthy();
+          expect(c(value).hasKey(-1)).toBeFalsy();
+          expect(c(value).hasKey(10)).toBeFalsy();
+        });
+
+        it('should return true if an equivalent key is in array', () => {
+          expect(c(value, {keyComp: toInt}).hasKey('2.2')).toBeTruthy();
+          expect(c(value).hasKey('20.2')).toBeFalsy();
+        });
+      });
+      describe('map', () => {
+        const map = new Map([['a', 100], ['b', -100], ['c', 500]]);
+        it('should detect if key is in map', () => {
+          expect(c(map).hasKey('b')).toBeTruthy();
+          expect(c(map).hasKey('d')).toBeFalsy();
+        });
+        it('should detect if equivalent key is in map with keyComp', () => {
+          expect(c(map, {keyComp: caseInsensitiveComp}).hasKey('B')).toBeTruthy();
+          expect(c(map, {keyComp: caseInsensitiveComp}).hasKey('d')).toBeFalsy();
+        });
+      });
+      describe('set', () => {
+        const value = ['a', 'b', 'c'];
+
+        it('should detect if key is in array', () => {
+          expect(c(new Set(value)).hasKey(1)).toBeTruthy();
+          expect(c(new Set(value)).hasKey(-1)).toBeFalsy();
+          expect(c(new Set(value)).hasKey(10)).toBeFalsy();
+        });
+
+        it('should return true if an equivalent key is in array', () => {
+          expect(c(new Set(value), {keyComp: intComp}).hasKey('2.2')).toBeTruthy();
+          expect(c(new Set(value), {keyComp: intComp}).hasKey('20.2')).toBeFalsy();
+        });
+      });
       describe('object', () => {
         it('should return 0 if empty', () => {
           expect(new Collect({}).size).toEqual(0);

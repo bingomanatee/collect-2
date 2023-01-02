@@ -1,5 +1,7 @@
 import { Collect, c } from '../index';
 
+const caseInsensitiveComp = (a: any, b: any) => `${a}`.toLowerCase() === `${b}`.toLowerCase();
+
 // @ts-ignore
 const sortByValue = ([aKey, aValue], [bKey, bValue]) => {
   if (aValue > bValue) {
@@ -11,10 +13,20 @@ const sortByValue = ([aKey, aValue], [bKey, bValue]) => {
   return 0;
 };
 
-const sortNumeric = (a: number, b:number) => (a - b);
+const sortNumeric = (a: number, b: number) => (a - b);
+const toInt = (n: any): any => {
+  if (typeof n === 'string') {
+    return toInt(Number.parseInt(n, 10));
+  }
+  if (typeof n === 'number') {
+    return Math.floor(n);
+  }
+  return n;
+}
 
 describe('Collect', () => {
   describe('get', () => {
+
     describe('void', () => {
       it('should throw', () => {
         expect(() => c().get('x')).toThrow();
@@ -35,6 +47,23 @@ describe('Collect', () => {
       const value = [1, 2, 4, 8];
       it('should return item with proper key', () => {
         expect(c(value).get(2)).toEqual(4);
+      });
+      it('should return item with equivalent key given a keyComp function', () => {
+
+        const keyComp = (a: any, b: any) => {
+          if (a === b) {
+            return true;
+          }
+          if (toInt(a) === toInt(b)) {
+            return true;
+          }
+          return false;
+        }
+
+        expect(c([20, 40, 60, 80], { keyComp }).get('2.2')).toEqual(60);
+      });
+      it('should not return item with equivalent key given a keyComp function', () => {
+        expect(() => c([20, 40, 60, 80]).get('2.2')).toThrow();
       });
       it('should return undefined with an out of range key', () => {
         expect(c(value).get(10)).toBeUndefined();
@@ -59,8 +88,12 @@ describe('Collect', () => {
       it('should return undefined for a missing key', () => {
         expect(c(value).get('s')).toBeUndefined();
       });
-    });
 
+      it('should fetch an equivalent key with a keyComp', () => {
+        expect(c(value, { keyComp: caseInsensitiveComp }).get('B'))
+          .toEqual(2);
+      });
+    });
     describe('set', () => {
       const value = new Set(['a', 'b', 'c']);
 
@@ -80,7 +113,6 @@ describe('Collect', () => {
         expect(() => c(value).get('doo')).toThrow();
       });
     });
-
     describe('object', () => {
       const value = { a: 1, '20': 2 }
 
@@ -88,8 +120,11 @@ describe('Collect', () => {
         expect(c(value).get('a')).toEqual(1);
         expect(c(value).get(20)).toEqual(2);
       });
-      it('should return undefined with an out of range key', () => {
+      it('should return undefined with an unmapped key', () => {
         expect(c(value).get('b')).toBeUndefined();
+      });
+      it('should return an equivalent key with a keyComp function', () => {
+        expect(c(value, { keyComp: caseInsensitiveComp }).get('A')).toEqual(1);
       });
     });
   });
@@ -129,10 +164,16 @@ describe('Collect', () => {
       });
     })
     describe('map', () => {
-      const value = new Map([['a', 1], ['b', 2], ['c', 3]])
+      const value = new Map([['a', 1], ['b', 2], ['c', 3]]);
 
       it('should update an item with existing key', () => {
         expect(c(new Map(value)).set('b', 8).value).toEqual(new Map([['a', 1], ['b', 8], ['c', 3]]));
+      });
+
+      it('should update an item with equivalent key with keyComp', () => {
+        expect(c(new Map(value), {
+          keyComp: caseInsensitiveComp
+        }).set('B', 8).value).toEqual(new Map([['a', 1], ['b', 8], ['c', 3]]));
       });
 
       it('should update an item with new key', () => {
@@ -162,6 +203,12 @@ describe('Collect', () => {
 
     describe('object', () => {
       const value = { a: 1, '20': 2 }
+
+      it('should update item with equivalent key with keyComp', () => {
+        expect(c({ ...value }, {
+          keyComp: caseInsensitiveComp
+        }).set('A', 30).value).toEqual({ a: 30, '20': 2 });
+      });
 
       it('should update item with existing key', () => {
         expect(c({ ...value }).set('a', 30).value).toEqual({ a: 30, '20': 2 });
@@ -217,9 +264,9 @@ describe('Collect', () => {
           [['e', 500], ['a', 100], ['b', 200], ['c', 50], ['d', 400]]
         )
       });
-      it('should add a key before the other items in a map (over existing)', () => {
+      it('should add a key onto an existing key', () => {
         expect(Array.from(c(values).addBefore(500, 'b').value.entries())).toEqual(
-          [['b', 500], ['a', 100], ['c', 50], ['d', 400]]
+          [['a', 100], ['b', 500], ['c', 50], ['d', 400]]
         );
       });
     });
@@ -292,7 +339,7 @@ describe('Collect', () => {
       const values = new Map([['a', 100], ['b', 200], ['c', 50], ['d', 400]]);
 
       it('should throw without a key', () => {
-        expect(() => c(values).addAfter(500)).toThrow();
+        expect(() => c(new Map(values)).addAfter(500)).toThrow();
       });
       it('should add a key before the other items in a map (no existing)', () => {
         expect(Array.from(c(values).addAfter(500, 'e').value.entries())).toEqual(
@@ -300,9 +347,17 @@ describe('Collect', () => {
         )
       });
       it('should add a key before the other items in a map (over existing)', () => {
-        expect(Array.from(c(values).addAfter(500, 'b').value.entries())).toEqual(
-          [['a', 100], ['c', 50], ['d', 400], ['b', 500]]
-        );
+        expect(Array.from(c(new Map(values)).addAfter(500, 'b').value.entries()))
+          .toEqual(
+            [['a', 100], ['b', 500], ['c', 50], ['d', 400]]
+          );
+      });
+      it('should add a key before the other items in a map (over equivalent) with a keyComp', () => {
+        expect(Array.from(c(new Map(values), { keyComp: caseInsensitiveComp }).addAfter(500, 'B')
+          .value.entries()))
+          .toEqual(
+            [['a', 100], ['b', 500], ['c', 50], ['d', 400]]
+          );
       });
     });
 
@@ -346,7 +401,18 @@ describe('Collect', () => {
           }
         );
       });
-    })
+      it('should add a key after the other items in a object (over equivalent) with a keyComp', () => {
+        expect(c({ ...values }, { keyComp: caseInsensitiveComp }).addAfter(500, 'B').value)
+          .toEqual(
+            {
+              a: 100,
+              b: 500,
+              c: 50,
+              d: 400
+            }
+          );
+      });
+    });
   });
 
   describe('clear', () => {
@@ -422,13 +488,13 @@ describe('Collect', () => {
     });
 
     describe('array', () => {
-      it('clones array and its contents', () => {
+      it('deep clones array and its contents', () => {
         const first = { a: 1, b: 2 };
         const second = ['a', 'b', 'c'];
         const value = [first, second];
 
         const base = c(value);
-        const clone = base.clone();
+        const clone = base.clone(true);
 
         expect(base.value).toEqual(clone.value);
         expect(base.value[0] === clone.value[0]).toBeFalsy();
@@ -441,7 +507,7 @@ describe('Collect', () => {
         const value = [first, second];
 
         const base = c(value);
-        const clone = base.clone(true);
+        const clone = base.clone();
 
         expect(base.value).toEqual(clone.value);
         expect(base.value[0] === clone.value[0]).toBeTruthy();
@@ -451,7 +517,7 @@ describe('Collect', () => {
     });
     describe('map', () => {
 
-      it('clones map and its contents', () => {
+      it('deep clones map and its contents', () => {
         const first = { a: 1, b: 2 };
         const second = ['a', 'b', 'c'];
         const value = new Map<any, any>([
@@ -460,7 +526,7 @@ describe('Collect', () => {
         ]);
 
         const base = c(value);
-        const clone = base.clone();
+        const clone = base.clone(true);
 
         expect(base.value).toEqual(clone.value);
         expect(base.value.get('first') === clone.value.get('first')).toBeFalsy();
@@ -475,7 +541,7 @@ describe('Collect', () => {
         ]);
 
         const base = c(value);
-        const clone = base.clone(true);
+        const clone = base.clone();
 
         expect(base.value).toEqual(clone.value);
         expect(base.value.get('first') === clone.value.get('first')).toBeTruthy();
@@ -484,13 +550,13 @@ describe('Collect', () => {
 
     });
     describe('set', () => {
-      it('clones set and its contents', () => {
+      it('deep clones set and its contents', () => {
         const first = { a: 1, b: 2 };
         const second = ['a', 'b', 'c'];
         const value = new Set([first, second]);
 
         const base = c(value);
-        const clone = base.clone();
+        const clone = base.clone(true);
 
         expect(base.value).toEqual(clone.value);
         expect(base.values[0] === clone.values[0]).toBeFalsy();
@@ -502,7 +568,7 @@ describe('Collect', () => {
         const value = new Set([first, second]);
 
         const base = c(value);
-        const clone = base.clone(true);
+        const clone = base.clone();
 
         expect(base.value).toEqual(clone.value);
         expect(base.values[0] === clone.values[0]).toBeTruthy();
@@ -510,7 +576,7 @@ describe('Collect', () => {
       })
     });
     describe('object', () => {
-      it('clones object and its contents', () => {
+      it('deep clones object and its contents', () => {
         const first = { a: 1, b: 2 };
         const second = ['a', 'b', 'c'];
         const value = {
@@ -518,7 +584,7 @@ describe('Collect', () => {
         };
 
         const base = c(value);
-        const clone = base.clone();
+        const clone = base.clone(true);
 
         expect(base.value).toEqual(clone.value);
         expect(base.value.first === clone.value.first).toBeFalsy();
@@ -533,7 +599,7 @@ describe('Collect', () => {
         };
 
         const base = c(value);
-        const clone = base.clone(true);
+        const clone = base.clone();
 
         expect(base.value).toEqual(clone.value);
         expect(base.value.first === clone.value.first).toBeTruthy();
@@ -577,18 +643,18 @@ describe('Collect', () => {
       ]);
 
       it('sort by keys without a function', () => {
-          expect([...c(map).sort().value.entries()]).toEqual(
-            [
-              [ 'Alan', 2 ],
-              [ 'Batman', 400 ],
-              [ 'Bobby', 300 ],
-              [ 'Frank', 200 ],
-              [ 'Marge', 1 ],
-              [ 'Miller', 4 ],
-              [ 'Robert', 3 ],
-              [ 'Susan', 100 ]
-            ]
-          );
+        expect([...c(map).sort().value.entries()]).toEqual(
+          [
+            ['Alan', 2],
+            ['Batman', 400],
+            ['Bobby', 300],
+            ['Frank', 200],
+            ['Marge', 1],
+            ['Miller', 4],
+            ['Robert', 3],
+            ['Susan', 100]
+          ]
+        );
       });
 
       it('should sort kv pairs by function', () => {
@@ -619,7 +685,7 @@ describe('Collect', () => {
       })
     })
     describe('object', () => {
-      const obj = {a: 100, b: 2, c: 300, d: 1, e: 200, f: 3};
+      const obj = { a: 100, b: 2, c: 300, d: 1, e: 200, f: 3 };
 
       it('should sort without sorterFn', () => {
         const sorted = c(obj).sort();
