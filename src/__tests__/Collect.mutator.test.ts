@@ -700,4 +700,105 @@ describe('Collect', () => {
       });
     });
   });
+
+  describe('filter', () => {
+    describe('void', () => {
+      it('should throw', () => {
+        expect(() => c().sort()).toThrow();
+      })
+    })
+    describe('function', () => {
+      it('should throw', () => {
+        expect(() => c(() => {
+        }).sort()).toThrow();
+      })
+    })
+    describe('scalar', () => {
+      it('should throw', () => {
+        expect(() => c(100).sort()).toThrow();
+      })
+    })
+
+    describe('array', () => {
+      const numbers = [1, 2, 3, 4, 5, 6, 7, 8];
+      it('should filter', () => {
+        expect(c(numbers).filter((n) => !!(n % 2)).value).toEqual([
+          1, 3, 5, 7
+        ]);
+      });
+
+      it('should filter with stopper', () => {
+        expect(c(numbers).filter((n, i) => {
+          if (i > 2) return {$STOP: true};
+          return !!(n % 2);
+        }).value).toEqual([
+          1, 3
+        ]);
+      });
+
+      it('should filter with stopper and value', () => {
+        expect(c(numbers).filter((n, i) => {
+          if (i > 2) return {$STOP: true, value: 8};
+          return !!(n % 2);
+        }).value).toEqual([
+          1, 3, 8
+        ]);
+      });
+    });
+    describe('map', () => {
+      const map = new Map([
+        ['Bobby', 300], ['Marge', 1], ['Susan', 100], ['Robert', 3],
+        ['Alan', 2], ['Frank', 200], ['Miller', 4], ['Batman', 400]
+      ]);
+
+      it('should filter', () => {
+        expect(Array.from(c(map).filter((v, i) => {
+            return (i === 'Miller') || v > 50;
+          }).value.entries()
+        )).toEqual([
+          ['Bobby', 300], ['Susan', 100], ['Frank', 200],
+          ['Miller', 4], ['Batman', 400]
+        ])
+      });
+
+      it('should filter with stopper', () => {
+        expect(Array.from(c(map).filter((v, i) => {
+          if (i === 'Miller') throw {$STOP: true};
+            return (i === 'Marge') || v > 50;
+          }).value.entries()
+        )).toEqual([
+          ['Bobby', 300], ['Marge', 1], ['Susan', 100], ['Frank', 200],
+        ])
+      });
+    });
+    describe('set', () => {
+      const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      it('should filter', () => {
+        expect(c(new Set(values)).filter((v) => !(v % 3)).value)
+          .toEqual(new Set([3, 6, 9]));
+      });
+      it('should filter with stopper', () => {
+        expect(c(new Set(values)).filter((v) => {
+          if (v > 7) throw {$STOP: true};
+          return !(v % 3);
+        }).value)
+          .toEqual(new Set([3, 6]));
+      });
+    })
+    describe('object', () => {
+      const obj = { a: 100, b: 2, c: 300, d: 1, e: 200, f: 3 };
+
+      it('should filter objects', () => {
+        expect(c(obj).filter((v, k) => {
+          return v > 50;
+        }).value).toEqual({a: 100, c: 300, e: 200})
+      })
+      it('should filter objects with stopper', () => {
+        expect(c(obj).filter((v, k) => {
+          if (k === 'd') throw {$STOP: true};
+          return v > 50;
+        }).value).toEqual({a: 100, c: 300});
+      })
+    });
+  });
 });

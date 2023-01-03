@@ -1,8 +1,18 @@
-import { collectObj, createFactory, iterFunction, reduceFunction, solverSpace, sortFn } from "./types";
+import {
+  collectObj,
+  createFactory,
+  filterFn,
+  generalObj,
+  iterFn,
+  objIter,
+  reduceFn,
+  solverSpace,
+  sortFn
+} from "./types";
 import clone from 'lodash.clonedeep';
 import { Stop } from "./Stop";
 
-const iterate = (c: collectObj, iterFn: iterFunction) => {
+const iterate = (c: collectObj, iterFn: iterFn) => {
 
   for (const [key, value] of c.iter) {
     const out = (() => {
@@ -17,7 +27,7 @@ const iterate = (c: collectObj, iterFn: iterFunction) => {
     }
   }
 }
-const mutate = (c: collectObj, iterFn: iterFunction) => {
+const mutate = (c: collectObj, iterFn: iterFn) => {
   const { size, iter } = c;
   const c2 = c.clone();
   c2.clear();
@@ -48,7 +58,7 @@ const mutate = (c: collectObj, iterFn: iterFunction) => {
   } while (iterations <= size);
   return c2.value;
 }
-const select = (c: collectObj, reduceFn: reduceFunction, initial?: any) => {
+const select = (c: collectObj, reduceFn: reduceFn, initial?: any) => {
   let memo = initial;
 
   for (const [key, value] of c.iter) {
@@ -157,13 +167,13 @@ export const makeSolvers = () => {
     iter(c: collectObj): IterableIterator<[any, any]> {
       throw new Error(`cannot iterate on a ${c.form}`);
     },
-    forEach(c: collectObj, iter: iterFunction) {
+    forEach(c: collectObj, iter: iterFn) {
       throw new Error(`cannot iterate over ${c.form}`);
     },
-    map(c: collectObj, iter: iterFunction) {
+    map(c: collectObj, iter: iterFn) {
       throw new Error(`cannot iterate over ${c.form}`);
     },
-    reduce(c: collectObj, iter: reduceFunction) {
+    reduce(c: collectObj, iter: reduceFn) {
       throw new Error(`cannot reduce ${c.form}`);
     },
     clone(c: collectObj) {
@@ -192,6 +202,9 @@ export const makeSolvers = () => {
     },
     addAfter(c: collectObj) {
       throw new Error(`cannot add after a ${c.form}`);
+    },
+    filter(c: collectObj, filter: filterFn) {
+      throw new Error(`cannot filter ${c.form}`)
     }
   }
 
@@ -237,13 +250,13 @@ export const makeSolvers = () => {
     }
   }
   const loopingSolver = {
-    map(c: collectObj, iterFn: iterFunction) {
+    map(c: collectObj, iterFn: iterFn) {
       return mutate(c, iterFn);
     },
-    reduce(c: collectObj, redFn: reduceFunction, memo: any) {
+    reduce(c: collectObj, redFn: reduceFn, memo: any) {
       return select(c, redFn, memo);
     },
-    forEach(c: collectObj, iterFn: iterFunction) {
+    forEach(c: collectObj, iterFn: iterFn) {
       iterate(c, iterFn);
     }
   }
@@ -484,6 +497,34 @@ export const makeSolvers = () => {
     sort(c: collectObj, sorter?: sortFn) {
       const sorted = (c.value as Array<any>).sort(sorter);
       c.change(sorted);
+    },
+    filter(c: collectObj, filter: filterFn) {
+      const value = [];
+
+      for(const [key, item] of c.iter) {
+        try {
+          const result = filter(item, key, c);
+          if ((typeof result !== 'boolean') &&  result.$STOP) {
+            if ('value' in result) {
+              value.push(result.value);
+            }
+            break;
+          }
+          if (result) {
+            value.push(item);
+          }
+        } catch (err: any) {
+          if (err.$STOP) {
+            if ('value' in err) {
+              value.push(err.value);
+            }
+            break;
+          }
+          throw err;
+        }
+      }
+
+      c.change(value);
     }
   };
 
@@ -529,7 +570,7 @@ export const makeSolvers = () => {
     values(c) {
       return [...c.value.values()];
     },
-    map(c: collectObj, iterFn: iterFunction) {
+    map(c: collectObj, iterFn: iterFn) {
       const out = new Set();
 
       for (const [key, value] of c.iter) {
@@ -587,6 +628,36 @@ export const makeSolvers = () => {
         }
       }
       return false;
+    },
+    filter(c: collectObj, filter: filterFn) {
+      const value = [];
+
+      for(const [key, item] of c.iter) {
+        try {
+          const result = filter(item, key, c);
+          console.log('set.filter ', key, item, ' result = ', result);
+
+          if ((typeof result !== 'boolean') &&  result.$STOP) {
+            if ('value' in result) {
+              value.push(result.value);
+            }
+            break;
+          }
+          if (result) {
+            value.push(item);
+          }
+        } catch (err: any) {
+          if (err.$STOP) {
+            if ('value' in err) {
+              value.push(err.value);
+            }
+            break;
+          }
+          throw err;
+        }
+      }
+
+      c.change(new Set(value));
     },
     addBefore(c: collectObj, itemOrItems: any, key?: number) {
       const standin = cf.create(c.values);
@@ -750,7 +821,37 @@ export const makeSolvers = () => {
         [...c.value.entries(), [key, item]]
       );
       c.change(map);
-    }
+    },
+    filter(c: collectObj, filter: filterFn) {
+      const value = new Map();
+
+      for(const [key, item] of c.iter) {
+        try {
+          const result = filter(item, key, c);
+          if ((typeof result !== 'boolean') &&  result.$STOP) {
+            if ('value' in result && Array.isArray(result.value)) {
+              const [k, v] = result.value;
+              value.set(k, v);
+            }
+            break;
+          }
+          if (result) {
+            value.set(key, item);
+          }
+        } catch (err: any) {
+          if (err.$STOP) {
+            if ('value' in err && Array.isArray(err.value)) {
+              const [k, v] = err.value;
+              value.set(k, v);
+            }
+            break;
+          }
+          throw err;
+        }
+      }
+
+      c.change(value);
+    },
   }
 
   solvers.object = {
@@ -907,7 +1008,37 @@ export const makeSolvers = () => {
       const value = { ...c.value };
       delete value[key];
       c.change({ ...value, [key]: item });
-    }
+    },
+    filter(c: collectObj, filter: filterFn) {
+      const value: generalObj = {};
+
+      for(const [key, item] of c.iter) {
+        try {
+          const result = filter(item, key, c);
+          if ((typeof result !== 'boolean') &&  result.$STOP) {
+            if ('value' in result && Array.isArray(result.value)) {
+              const [k, v]: objIter = result.value as objIter;
+              value[k] = v;
+            }
+            break;
+          }
+          if (result) {
+            value[key] = item;
+          }
+        } catch (err: any) {
+          if (err.$STOP) {
+            if ('value' in err && Array.isArray(err.value)) {
+              const [k, v]: objIter = err.value;
+              value[k] = v;
+            }
+            break;
+          }
+          throw err;
+        }
+      }
+
+      c.change(value);
+    },
   }
 
   return solvers;

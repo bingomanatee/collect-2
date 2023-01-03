@@ -1,4 +1,4 @@
-import { collectObj, collectOpts, iterFunction, reduceFunction, solverFn, sortFn } from "./types";
+import { collectObj, collectOpts, filterFn, iterFn, reduceFn, solverFn, sortFn } from "./types";
 import { type } from "@wonderlandlabs/walrus";
 import { makeSolvers, cf } from "./solvers";
 
@@ -108,7 +108,7 @@ export class Collect implements collectObj {
 
   // ----------- iteration
 
-  reduce(iter: reduceFunction, initial?: any) {
+  reduce(iter: reduceFn, initial?: any) {
     return solvers[this.form].reduce(this, iter, initial);
   }
 
@@ -116,12 +116,12 @@ export class Collect implements collectObj {
     return solvers[this.form]?.iter(this);
   }
 
-  forEach(iter: iterFunction): collectObj {
+  forEach(iter: iterFn): collectObj {
     solvers[this.form]?.forEach(this, iter);
     return this;
   }
 
-  map(iter: iterFunction): void {
+  map(iter: iterFn): void {
     return solvers[this.form]?.map(this, iter);
   }
 
@@ -176,8 +176,8 @@ export class Collect implements collectObj {
     return this;
   }
 
-  sort(sortFn?: sortFn) {
-    solvers[this.form]?.sort(this, sortFn);
+  sort(sort?: sortFn) {
+    solvers[this.form]?.sort(this, sort);
     return this;
   }
 
@@ -196,5 +196,10 @@ export class Collect implements collectObj {
       return true;
     }
     return this.opts.valueComp ? this.opts.valueComp(a, b) : false;
+  }
+
+  filter(filter: filterFn) {
+    solvers[this.form]?.filter(this, filter);
+    return this;
   }
 }

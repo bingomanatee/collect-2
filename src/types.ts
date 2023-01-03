@@ -1,8 +1,13 @@
 export type collectOpts = {
   lockType?: boolean;
-  debug?: boolean; 
+  debug?: boolean;
   keyComp?: compFn;
   valueComp?: compFn;
+}
+
+export type Stopper = {
+  $STOP: boolean;
+  value?: any;
 }
 
 export type collectObj = {
@@ -15,13 +20,14 @@ export type collectObj = {
   values: any[];
   items: any[];
   size: number;
+  filter: (filter: filterFn) => collectObj;
   hasKey: (key: any) => boolean;
   hasValue: (item: any) => boolean;
   change(v: any): void; // an internal method to update the value - not for general use.
   iter: IterableIterator<[any, any]>;
-  forEach: (iterFn: iterFunction) => collectObj;
-  map: (iterFn: iterFunction) => any;
-  reduce: (iterFn: reduceFunction, initial?: any) => any;
+  forEach: (iterFn: iterFn) => collectObj;
+  map: (iterFn: iterFn) => any;
+  reduce: (iterFn: reduceFn, initial?: any) => any;
   clone: (deep?: boolean) => collectObj;
   cloneEmpty: () => collectObj;
   get: (key: any) => any;
@@ -41,9 +47,13 @@ export type collectObj = {
   sameKeys(a: any, b: any) : boolean;
 }
 
+export type generalObj = {[key: string] : any};
+export type objIter = [key: string, value: any];
+
 export type solverFn = (collect: collectObj, name?: string) => any;
-export type reduceFunction = (memo: any, value: any, key: any, collect: collectObj) => any;
-export type iterFunction = (value: any, key: any, collect: collectObj) => any;
+export type reduceFn = (memo: any, value: any, key: any, collect: collectObj) => any;
+export type iterFn = (value: any, key: any, collect: collectObj) => any;
+export type filterFn = (value: any, key: any, collect: collectObj) => boolean | Stopper;
 export type sortFn = (a: any, b: any) => number;
 export type compFn = (a: any, b: any) => boolean;
 
@@ -60,13 +70,17 @@ export interface solverObj {
 
   // iteration
   iter(c: collectObj) : IterableIterator<[any, any]>;
-  forEach(c: collectObj, iter: iterFunction) : void;
-  reduce(c: collectObj, iter: reduceFunction, initial?: any): any;
-  map (c: collectObj, iterFn: iterFunction) : any;
+  forEach(c: collectObj, iter: iterFn) : void;
+  reduce(c: collectObj, reducer: reduceFn, initial?: any): any;
+  map (c: collectObj, iter: iterFn) : any;
+
+  // mutation
+  filter (c: collectObj, filter: filterFn) : void;
   clone(c: collectObj, deep?: boolean) : collectObj;
   clear(c: collectObj) : void;
   sort(c: collectObj, sorter?: sortFn) : void;
   keyOf(c: collectObj, key: any, allKeys?: boolean): any;
+
   deleteKey: (c: collectObj, key: any, preserveKeys?: boolean) => void;
   deleteItem: (c: collectObj, item: any, once?: boolean, preserveKeys?: boolean) => void;
 

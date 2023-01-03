@@ -1,5 +1,9 @@
-export class Stop {
-  constructor(public lastValue: any, public omit: boolean = false) {}
+import { Stopper } from './types'
+
+export class Stop extends Error implements Stopper {
+  constructor(public value?: any) {
+    super('stopped');
+  }
 
   public readonly $STOP = true;
 }
