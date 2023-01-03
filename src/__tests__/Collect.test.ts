@@ -171,18 +171,18 @@ describe('Collect', () => {
     });
     describe('hasKey', () => {
       describe('void', () => {
-        it('should always return 0', () => {
-          expect(new Collect().size).toEqual(0);
+        it('should be false', () => {
+          expect( c().hasKey(10)).toBeFalsy();
         })
       })
       describe('function', () => {
-        it('should always return 0', () => {
-          expect(new Collect().size).toEqual(0);
+        it('should be false', () => {
+          expect( c(() => {}).hasKey(10)).toBeFalsy();
         })
       })
       describe('scalar', () => {
-        it('should always return 0', () => {
-          expect(new Collect('100').size).toEqual(0);
+        it('should be false', () => {
+          expect( c(1000).hasKey(10)).toBeFalsy();
         })
       })
       describe('array', () => {
@@ -195,8 +195,9 @@ describe('Collect', () => {
         });
 
         it('should return true if an equivalent key is in array', () => {
-          expect(c(value, {keyComp: toInt}).hasKey('2.2')).toBeTruthy();
-          expect(c(value).hasKey('20.2')).toBeFalsy();
+          const cl = c(value, {keyComp: intComp});
+          expect(cl.hasKey('2.2')).toBeTruthy();
+          expect(cl.hasKey('20.2')).toBeFalsy();
         });
       });
       describe('map', () => {
@@ -232,6 +233,78 @@ describe('Collect', () => {
           expect(new Collect({ x: 1, y: -1, z: 0 }).size).toEqual(3);
         })
       })
+    });
+    describe('hasValue', () => {
+      describe('void', () => {
+        it('should return false', () => {
+          expect(c().hasValue(100)).toBeFalsy();
+        });
+      });
+      describe('function', () => {
+        it('should always return false', () => {
+          expect(c().hasValue(() => {})).toBeFalsy();
+        })
+      })
+      describe('scalar', () => {
+        it('should always be false', () => {
+          expect(c(100).hasValue(100)).toBeFalsy();
+        });
+      });
+      describe('array', () => {
+        const value = ['a', 'b', 'c'];
+
+        it('should detect if item is in array', () => {
+          expect(c(value).hasValue('a')).toBeTruthy();
+          expect(c(value).hasValue('d')).toBeFalsy();
+        });
+
+        it('should return true if an equivalent value is in array', () => {
+          const cf = c(value, {valueComp: caseInsensitiveComp});
+          expect(cf.hasValue('a')).toBeTruthy();
+          expect(cf.hasValue('A')).toBeTruthy();
+          expect(cf.hasValue('D')).toBeFalsy();
+        });
+      });
+      describe('map', () => {
+        const map = new Map([['a', 100], ['b', -100], ['c', 500]]);
+        it('should detect if key is in map', () => {
+          expect(c(map).hasValue(100)).toBeTruthy();
+          expect(c(map).hasValue(1000)).toBeFalsy();
+        });
+        it('should detect if equivalent key is in map with keyComp', () => {
+          const cf = c(map, {valueComp: intComp});
+          expect(cf.hasValue(100.1)).toBeTruthy();
+          expect(cf.hasValue('1000')).toBeFalsy();
+        });
+      });
+      describe('set', () => {
+        const value = ['a', 'b', 'c'];
+
+        it('should detect if key is in set', () => {
+          expect(c(new Set(value)).hasValue('a')).toBeTruthy();
+          expect(c(new Set(value)).hasValue('d')).toBeFalsy();
+        });
+
+        it('should return true if an equivalent key is in set', () => {
+          const cf = c(new Set(value), {valueComp: caseInsensitiveComp});
+          expect(cf.hasValue('A')).toBeTruthy();
+          expect(cf.hasValue('D')).toBeFalsy();
+        });
+      });
+      describe('object', () => {
+        const value = {a: 100, b: 200, c: 300};
+
+        it('should detect if item is in object', () => {
+          expect(c( value).hasValue(100)).toBeTruthy();
+          expect(c(value).hasValue(500)).toBeFalsy();
+        });
+
+        it('should return true if an equivalent item is in object', () => {
+          const cf = c((value), {valueComp: intComp});
+          expect(cf.hasValue(100.1)).toBeTruthy();
+          expect(cf.hasValue(301.2)).toBeFalsy();
+        });
+      });
     });
     describe('keyOf', () => {
       describe('void', () => {

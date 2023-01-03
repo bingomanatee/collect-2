@@ -413,7 +413,13 @@ export const makeSolvers = () => {
       c.change(list)
     },
     hasValue(c: collectObj, item: any) {
-      return (c.value as Array<any>).includes(item);
+      if ((c.value as Array<any>).includes(item)) {
+        return true;
+      }
+      if (c.opts.valueComp) {
+        return (c.value as Array<any>).some((iItem) => c.sameValues(iItem, item));
+      }
+      return false;
     },
     addBefore(c: collectObj, itemOrItems: any, key?: any) {
       const out: any[] = [];
@@ -572,7 +578,15 @@ export const makeSolvers = () => {
       c.change(list)
     },
     hasValue(c: collectObj, item: any) {
-      return (c.value as Set<any>).has(item);
+      if ((c.value as Set<any>).has(item)) return true;
+      if (c.opts.valueComp){
+        for (const iItem of c.value.values()) {
+          if(c.sameValues(iItem, item)) {
+            return true
+          }
+        }
+      }
+      return false;
     },
     addBefore(c: collectObj, itemOrItems: any, key?: number) {
       const standin = cf.create(c.values);
@@ -694,7 +708,12 @@ export const makeSolvers = () => {
       c.change(map);
     },
     hasValue(c: collectObj, item: any) {
-      return (c.value as Map<any, any>).has(item);
+        for(const[_key, value] of c.iter) {
+          if (c.sameValues(value, item)) {
+            return true;
+          }
+        }
+      return false;
     },
     first(c: collectObj, count?: number) {
       if (count === undefined || count < 1) {

@@ -11,9 +11,11 @@ const solvers = makeSolvers();
 export class Collect implements collectObj {
   constructor(value?: any, opts?: collectOpts) {
     this._value = value;
-    if (opts) this.opts = opts;
+    if (opts) {
+      this.opts = opts;
+    }
   }
-  
+
   get opts(): collectOpts {
     return this._opts || {}
   }
@@ -180,10 +182,19 @@ export class Collect implements collectObj {
   }
 
   sameKeys(a: any, b: any) {
-    return this.opts.keyComp? this.opts.keyComp(a, b) : a === b;
+    if (a === b) {
+      return true;
+    }
+    if (this.opts.keyComp) {
+      return this.opts.keyComp(a, b);
+    }
+    return false;
   }
 
   sameValues(a: any, b: any) {
-    return this.opts.valueComp? this.opts.valueComp(a, b) : a === b;
+    if (a === b) {
+      return true;
+    }
+    return this.opts.valueComp ? this.opts.valueComp(a, b) : false;
   }
 }
