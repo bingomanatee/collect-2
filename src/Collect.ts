@@ -1,10 +1,17 @@
 import { collectObj, collectOpts, filterFn, iterFn, reduceFn, solverFn, sortFn } from "./types";
 import { type } from "@wonderlandlabs/walrus";
-import { makeSolvers, cf } from "./solvers";
+import { makeSolvers } from "./solvers";
+import { sandboxObj } from "./sandboxObj";
 
-export const c = (...args: any[]) => (new Collect(...args));
+export const c = (...args: any[]): collectObj => {
+  if (args[0] instanceof Collect) {
+    if (!args[1]) return args[0];
+    return new Collect(args[0].value, args[1]).clone();
+  }
+  return new Collect(...args);
+};
 
-cf.create = c;
+sandboxObj.create = c;
 
 const solvers = makeSolvers();
 
@@ -45,18 +52,22 @@ export class Collect implements collectObj {
   // ----------- introspection
 
   private _type?: any;
-  get type(): string {
+  private get typeBase() {
     if (!this._type) {
       this._type = type.describe(this.value);
     }
-    return this._type?.type || '';
+    return this._type;
+  }
+  get type(): string {
+    return this.typeBase?.type || '';
   }
 
   get form(): string {
-    if (!this._type) {
-      this._type = type.describe(this.value);
-    }
-    return this._type?.form || '';
+    return this.typeBase?.form || '';
+  }
+
+  get family(): string {
+    return this.typeBase?.family || '';
   }
 
   private _keySolver?: solverFn;
@@ -82,12 +93,17 @@ export class Collect implements collectObj {
     return solvers[this.form]?.size(this) ?? 0;
   }
 
-  hasKey(key: any) {
+  hasKey(key: any) : boolean {
     return solvers[this.form]?.hasKey(this, key);
   }
 
-  hasValue(item: any) {
-    return solvers[this.form]?.hasValue(this, item);
+  hasValue(item: any): boolean {
+    try {
+      return solvers[this.form]?.hasValue(this, item);
+    } catch (err) {
+      console.log('cannot hasValue ', this, 'for ', item);
+      throw err;
+    }
   }
 
   first(count?: number) {
@@ -108,10 +124,6 @@ export class Collect implements collectObj {
 
   // ----------- iteration
 
-  reduce(iter: reduceFn, initial?: any) {
-    return solvers[this.form].reduce(this, iter, initial);
-  }
-
   get iter(): IterableIterator<[any, any]> {
     return solvers[this.form]?.iter(this);
   }
@@ -121,8 +133,31 @@ export class Collect implements collectObj {
     return this;
   }
 
-  map(iter: iterFn): void {
-    return solvers[this.form]?.map(this, iter);
+  reduce(iter: reduceFn, initial?: any): collectObj {
+    solvers[this.form].reduce(this, iter, initial);
+    return this;
+  }
+
+  map(iter: iterFn): collectObj {
+    solvers[this.form]?.map(this, iter);
+    return this;
+  }
+
+  filter(filter: filterFn, preserveKeys?: boolean) {
+    solvers[this.form]?.filter(this, filter, preserveKeys);
+    return this;
+  }
+
+  getReduce(iter: reduceFn, initial?: any): collectObj {
+    return solvers[this.form].getReduce(this, iter, initial);
+  }
+
+  getMap(iter: iterFn): collectObj {
+    return solvers[this.form]?.getMap(this, iter);
+  }
+
+  getFilter(filter: filterFn, preserveKeys?: boolean) {
+    return solvers[this.form]?.getFilter(this, filter, preserveKeys);
   }
 
   // ----------- mutation
@@ -136,6 +171,7 @@ export class Collect implements collectObj {
   }
 
   change(v: any): collectObj {
+    if (v instanceof Collect) v = v.clone().value;
     //@TODO: enforce locking
     this._value = v;
     this._type = type.describe(v);
@@ -198,8 +234,28 @@ export class Collect implements collectObj {
     return this.opts.valueComp ? this.opts.valueComp(a, b) : false;
   }
 
-  filter(filter: filterFn) {
-    solvers[this.form]?.filter(this, filter);
+  removeFirst(count?: number, entries?: boolean) {
+    return solvers[this.form]?.removeFirst(this, count, entries);
+  }
+
+  removeLast(count?: number, entries?: boolean) {
+    return solvers[this.form]?.removeLast(this, count, entries);
+  }
+
+  append(item: any, atKey?: any) {
+    solvers[this.form]?.append(this, item, atKey);
+    return this;
+  }
+
+  selectKeys(keys: any, preserveKeys?: boolean) {
+    solvers[this.form]?.selectKeys(this, keys, preserveKeys);
+    return this;
+  }
+
+  selectValues(values: any, preserveKeys?: boolean) {
+    solvers[this.form]?.selectValues(this, values, preserveKeys);
     return this;
   }
 }
+
+sandboxObj.Collect = Collect;
