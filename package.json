@@ -1,6 +1,6 @@
 {
   "name": "@wonderlandlabs/collect",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Modern 'equalizer' for container classes",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
