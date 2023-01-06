@@ -18,108 +18,55 @@ See ["Getting Started"](https://collect-docs.vercel.app/get-started) for example
 
 See ["Why Collect Exists"](https://collect-docs.vercel.app/why) for a longer explanation of the purpose and impetus of Collect.
 
-<FeaturesTable>
-  <thead>
-  <tr>
-    <th>
-      Reflection
-    </th>
+## Reflection
+* [`form`](https://collect-docs.vercel.app/reflection/type) string
+* [`type`](https://collect-docs.vercel.app/reflection/type) string
+* [`size`](https://collect-docs.vercel.app/reflection/reflection#size-whole-number-read-only) int
+* [`value`](https://collect-docs.vercel.app/reflection/reflection#store-any-read-only) raw
+* [`hasKey(key)`](https://collect-docs.vercel.app/reflection/introspection#haskeykey-boolean)
+* [`hasItem(item)`](https://collect-docs.vercel.app/reflection/introspection#hasitemitem-boolean) bool
+* [`first(count?)`](https://collect-docs.vercel.app/reflection/reflection#firstcount-number--items): item[]
+* [`last(count?)`](https://collect-docs.vercel.app/reflection/reflection#lastcount-number--items) item[]
+* [`firstItem`](https://collect-docs.vercel.app/reflection/reflection#firstitem) item?
+* [`lastItem`](https://collect-docs.vercel.app/reflection/reflection#lastitem) item?
 
-    <th>
-      Access
-    </th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr>
-    <td>
-      * [`form`](https://collect-docs.vercel.app/reflection/type) string
-      * [`type`](https://collect-docs.vercel.app/reflection/type) string
-      * [`size`](https://collect-docs.vercel.app/reflection/reflection#size-whole-number-read-only) int
-      * [`value`](https://collect-docs.vercel.app/reflection/reflection#store-any-read-only) raw
-      * [`hasKey(key)`](https://collect-docs.vercel.app/reflection/introspection#haskeykey-boolean)
-      * [`hasItem(item)`](https://collect-docs.vercel.app/reflection/introspection#hasitemitem-boolean) bool
-      * [`first(count?)`](https://collect-docs.vercel.app/reflection/reflection#firstcount-number--items): item[]
-      * [`last(count?)`](https://collect-docs.vercel.app/reflection/reflection#lastcount-number--items) item[]
-      * [`firstItem`](https://collect-docs.vercel.app/reflection/reflection#firstitem) item?
-      * [`lastItem`](https://collect-docs.vercel.app/reflection/reflection#lastitem) item?
-    </td>
-    <td>
-      * [`get(key`)](https://collect-docs.vercel.app/reflection/introspection#getkey-any): item
-      * [`set(key, value)`](https://collect-docs.vercel.app/reflection/introspection#setkey-item--self)
-      * [`deleteKey(key or key[])`](https://collect-docs.vercel.app/changes#deletekeykey--key--self
-      * [`deleteItem(item or item[])`](https://collect-docs.vercel.app/changes#deleteitemitem--items--self)
-      * [`keyOf(item)`](https://collect-docs.vercel.app/reflection/introspection#keyofitem-key--undefined): key?
-      * [`keys`](https://collect-docs.vercel.app/reflection/reflection#keys-any): keys[]
-      * [`values`](https://collect-docs.vercel.app/reflection/reflection#items-any): items[]
-    </td>
-  </tr>
-  </tbody>
-  <thead>
-  <tr>
+### Access
+* [`get(key`)](https://collect-docs.vercel.app/reflection/introspection#getkey-any): item
+* [`set(key, value)`](https://collect-docs.vercel.app/reflection/introspection#setkey-item--self)
+* [`deleteKey(key or keys)`](https://collect-docs.vercel.app/changes#deletekeykey--key--self)
+* [`deleteItem(item or items)`](https://collect-docs.vercel.app/changes#deleteitemitem--items--self)
+* [`keyOf(item)`](https://collect-docs.vercel.app/reflection/introspection#keyofitem-key--undefined): key?
+* [`keys`](https://collect-docs.vercel.app/reflection/reflection#keys-any): keys[]
+* [`values`](https://collect-docs.vercel.app/reflection/reflection#items-any): items[]
 
-    <th>
-      Loopers
-    </th>
+### Loopers
+* [`forEach(action)`](https://collect-docs.vercel.app/looping#foreachlooper-self)
+* [`reduce(action)`](https://collect-docs.vercel.app/looping#reducelooper-initial-any) any
+* [`map(action)`](https://collect-docs.vercel.app/looping#maplooper-self)
 
-    <th>
-      Iterators
-    </th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr>
-    <td>
-      * [`forEach(action)`](https://collect-docs.vercel.app/looping#foreachlooper-self)
-      * [`reduce(action)`](https://collect-docs.vercel.app/looping#reducelooper-initial-any) any
-      * [`map(action)`](https://collect-docs.vercel.app/looping#maplooper-self)
+### Iterators
+* [`storeIter`](https://collect-docs.vercel.app/iterators#storeiter-iterator) iterator
+* [`itemIter`](https://collect-docs.vercel.app/iterators#itemiter-iterator) iterator
+* [`keyIter`](https://collect-docs.vercel.app/iterators#keyiter--iterator) iterator
 
-      <small>Each can be interrupted mid-stream</small>
-    </td>
-    <td>
-      * [`storeIter`](https://collect-docs.vercel.app/iterators#storeiter-iterator) iterator
-      * [`itemIter`](https://collect-docs.vercel.app/iterators#itemiter-iterator) iterator
-      * [`keyIter`](https://collect-docs.vercel.app/iterators#keyiter--iterator) iterator
-    </td>
-  </tr>
-  </tbody>
+### Append
+* [`addBefore(item, key?)`](https://collect-docs.vercel.app/append#addbeforeitem-key-self)
+* [`addAfter(item, key?)`](https://collect-docs.vercel.app/append#addafteritem-key-self)
+* [`removeFirst(count?)`](https://collect-docs.vercel.app/append#removefirstcount-item)
+* [`removeLast(count?)`](https://collect-docs.vercel.app/append#removelastcount-item)
 
-  <thead>
-  <tr>
-    <th>
-      Append
-    </th>
-    <th>
-      Utility
-    </th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr>
-    <td>
-      * [`addBefore(item, key?)`](https://collect-docs.vercel.app/append#addbeforeitem-key-self)
-      * [`addAfter(item, key?)`](https://collect-docs.vercel.app/append#addafteritem-key-self)
-      * [`removeFirst(count?)`](https://collect-docs.vercel.app/append#removefirstcount-item)
-      * [`removeLast(count?)`](https://collect-docs.vercel.app/append#removelastcount-item)
-    </td>
-    <td>
-      * [`clone(opts?)`](https://collect-docs.vercel.app/changes#cloneoptions-quiet-boolean-compkeys-compitems-collection)
-      * [`cloneEmpty(opts?)`](https://collect-docs.vercel.app/changes#cloneemptyoptions-quiet-boolean-compkeys-compitems-collection)
-      * [`cloneShallow(opts?)`](https://collect-docs.vercel.app/changes#cloneshallowoptions-collection)
-      * [`clear()`](https://collect-docs.vercel.app/changes#clear--self)
-      * [`sort(ordFn)`](https://collect-docs.vercel.app/changes#sortsortfn-comparatorfn-self)
-      * [`change(fn | neStore)`](https://collect-docs.vercel.app/changes#changereplacer--store--storetype--void-collection-self)
-    </td>
-  </tr>
-  </tbody>
-</FeaturesTable>
-
-![](https://collect-docs.vercel.app/public/robots_aff.png)
+### Utility
+* [`clone(deep?)`](https://collect-docs.vercel.app/changes#cloneoptions-quiet-boolean-compkeys-compitems-collection)
+* [`cloneEmpty()`](https://collect-docs.vercel.app/changes#cloneemptyoptions-quiet-boolean-compkeys-compitems-collection)
+* [`cloneShallow()`](https://collect-docs.vercel.app/changes#cloneshallowoptions-collection)
+* [`clear()`](https://collect-docs.vercel.app/changes#clear--self)
+* [`sort(ordFn)`](https://collect-docs.vercel.app/changes#sortsortfn-comparatorfn-self)
+* [`change(newStore)`](https://collect-docs.vercel.app/changes#changereplacer--store--storetype--void-collection-self)
 
 ## Highlights
 
 * **custom comparators**: store and look up keys with matching functions you can inject yourself
-* (WIP) combine (union, difference, intersect) contents of any collections into the store type of your choice.
+* **set operations**: merge in contents of any collections into the store type of your choice, or pick values based on value or key set.
 * **Robust**: no caching -- only a single value is stored in each wrapper
 * **Broad**: allows consistent access for Arrays, Maps, Objects, strings and Sets
 * **Very little external dependency**: `lodash.cloneDeep` and `lodash.toString` are used; otherwise, this library uses 100% pure Javascript
