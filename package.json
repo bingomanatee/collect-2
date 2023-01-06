@@ -1,7 +1,7 @@
 {
-  "name": "ts-npm-package-boilerplate",
+  "name": "@wonderlandlabs/collect",
   "version": "1.0.0",
-  "description": "TypeScript NPM Module Boilerplate",
+  "description": "Modern 'equalizer' for container classes",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hebertcisco/ts-npm-package-boilerplate.git"
+    "url": "git+https://github.com/bingomanatee/collect-2.git"
   },
   "keywords": [
     "boilerplate",
@@ -29,9 +29,9 @@
   "author": "Hebert Cisco",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hebertcisco/ts-npm-package-boilerplate/issues"
+    "url": "https://github.com/bingomanatee/collect-2/issues"
   },
-  "homepage": "https://github.com/hebertcisco/ts-npm-package-boilerplate#readme",
+  "homepage": "https://collect-docs.vercel.app",
   "devDependencies": {
     "@types/jest": "29.2.4",
     "@types/lodash.clonedeep": "^4.5.0",

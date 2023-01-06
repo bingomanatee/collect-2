@@ -268,6 +268,7 @@ describe('Collect', () => {
       })
 
       describe('array', () => {
+        const source = [1, 2, 4, 8, 16, 32];
         it('should return modified array - and not modify source', () => {
           const base = c([1, 2, 4, 8]);
           const map = base.map((n) => 2 * n);
@@ -276,7 +277,7 @@ describe('Collect', () => {
         });
 
         it('allow interruption', () => {
-          const base = c([1, 2, 4, 8, 16, 32]);
+          const base = c([...source]);
           const map = base.map((n) => {
             if (n > 4) {
               throw { $STOP: true }
@@ -286,23 +287,33 @@ describe('Collect', () => {
           expect(map.value).toEqual([2, 4, 8]);
          // expect(base.value).toEqual([1, 2, 4, 8, 16, 32]);
         });
+
+        it('should return a modified array and leave original', () => {
+          const cf = c([...source]);
+          const mapped = cf.getMap((n) => 2 * n);
+          expect(mapped).toEqual(source.map(n => 2 * n));
+          expect(cf.value).toEqual(source);
+        })
       })
       describe('map', () => {
+        const source = [
+          ['a', 1],
+          ['b', 2],
+          ['c', 3],
+          ['d', 4],
+          ['e', 5],
+        ];
+        const output = new Map([
+          ['a', 2],
+          ['b', 4],
+          ['c', 6],
+          ['d', 8],
+          ['e', 10],
+        ]);
+
         it('should return modified array - and not modify source', () => {
-          const input = new Map([
-            ['a', 1],
-            ['b', 2],
-            ['c', 3],
-            ['d', 4],
-            ['e', 5],
-          ]);
-          const output = new Map([
-            ['a', 2],
-            ['b', 4],
-            ['c', 6],
-            ['d', 8],
-            ['e', 10],
-          ])
+          // @ts-ignore
+          const input = new Map<string, number>(source);
           const base = c(input);
           const map = base.map((n) => 2 * n);
           expect(map.value).toEqual(output);
@@ -332,10 +343,21 @@ describe('Collect', () => {
           expect(map.value).toEqual(output);
         //  expect(base.value).toEqual(input);
         });
+
+        it('should return a modified array and leave original', () => {
+          // @ts-ignore
+          const cf = c(new Map(source));
+          const mapped = cf.getMap((n) => 2 * n);
+          expect(mapped).toEqual(output);
+          // @ts-ignore
+          expect(cf.value).toEqual(new Map(source));
+        })
       })
+
       describe('set', () => {
+        const source = [1, 2, 4, 8, 16, 32];
         it('should produce modified set', () => {
-          const base = c(new Set([1, 2, 4, 8, 16, 32]));
+          const base = c(new Set(source));
           const map = base.map((n) => {
             if (n > 4) {
               throw { $STOP: true }
@@ -345,24 +367,31 @@ describe('Collect', () => {
           expect(map.value).toEqual(new Set([2, 4, 8]));
          // expect(base.value).toEqual(new Set([1, 2, 4, 8, 16, 32]));
         });
+
+        it('should return a modified array and leave original', () => {
+          const cf = c(new Set(source));
+          const mapped = cf.getMap((n) => 2 * n);
+          expect(mapped).toEqual(new Set(source.map(n => 2 * n)));
+          expect(cf.value).toEqual(new Set(source));
+        })
       })
       describe('object', () => {
+        const source = {
+          a: 1,
+          b: 2,
+          c: 3,
+          d: 4,
+          e: 5
+        }
+        const output = {
+          a: 2,
+          b: 4,
+          c: 6,
+          d: 8,
+          e: 10
+        }
         it('modifies result, but not base', () => {
-          const input = {
-            a: 1,
-            b: 2,
-            c: 3,
-            d: 4,
-            e: 5
-          }
-          const output = {
-            a: 2,
-            b: 4,
-            c: 6,
-            d: 8,
-            e: 10
-          }
-          const base = c(input);
+          const base = c({ ...source });
           const map = base.map((n) => {
             return 2 * n;
           });
@@ -392,6 +421,13 @@ describe('Collect', () => {
           expect(map.value).toEqual(output);
          // expect(base.value).toEqual(input);
         });
+
+        it('should return a modified array and leave original', () => {
+          const cf = c({...source});
+          const mapped = cf.getMap((n) => 2 * n);
+          expect(mapped).toEqual(output);
+          expect(cf.value).toEqual(source);
+        })
       });
     })
 
@@ -420,14 +456,15 @@ describe('Collect', () => {
       })
 
       describe('array', () => {
-        it('should return a summary', () => {
-          const base = c([1, 2, 4, 8]);
+        const input = [1, 2, 4, 8];
+        it('should update with  a summary', () => {
+          const base = c([...input]);
           const sum = base.reduce(sumReducer);
           expect(sum.value).toEqual(15);
           //expect(base.value).toEqual([1, 2, 4, 8]);
         });
 
-        it('should return a summary -- with an initializer', () => {
+        it('should update with a summary -- with an initializer', () => {
           const base = c([1, 2, 4, 8]);
           const sum = base.reduce(sumReducer, 5);
           expect(sum.value).toEqual(20);
@@ -456,6 +493,13 @@ describe('Collect', () => {
           });
           expect(map.value).toEqual(107);
          // expect(base.value).toEqual([1, 2, 4, 8, 16, 32]);
+        });
+
+        it('should return a summary with an initializer', () => {
+          const cf = c([...input]);
+          const value = cf.getReduce(sumReducer, 10);
+          expect(value).toBe(25);
+          expect(cf.value).toEqual(input);
         });
       })
       describe('map', () => {
@@ -507,18 +551,25 @@ describe('Collect', () => {
           expect(map.value ).toEqual(106);
          //expect(base.value).toEqual(initial);
         });
+
+        it('should return a reduced value', () => {
+          const cf = c(new Map(initial));
+          const reduce = cf.getReduce(sumReducer, 5);
+          expect(reduce).toBe(35);
+          expect(cf.value).toEqual(initial);
+        })
       })
       describe('set', () => {
         const initial = new Set([2, 4, 6, 8, 10]);
         const source = new Set(initial);
-        it('should return a summary', () => {
+        it('should accept a summary', () => {
           const base = c(source);
           const sum = base.reduce(sumReducer);
           expect(sum.value).toEqual(30);
         //  expect(base.value).toEqual(initial);
         });
 
-        it('should return a summary -- with an initializer', () => {
+        it('should accept a summary -- with an initializer', () => {
           const base = c(source);
           const sum = base.reduce(sumReducer, 5);
           expect(sum.value).toEqual(35);
@@ -548,6 +599,13 @@ describe('Collect', () => {
           expect(map.value).toEqual(106);
         //  expect(base.value).toEqual(initial);
         });
+
+        it('should return a summary', () => {
+          const cf = c(new Set(initial));
+          const sum = cf.getReduce(sumReducer, 5);
+          expect(sum).toBe(35);
+          expect(cf.value).toEqual(initial);
+        })
       });
       describe('object', () => {
         const initial = {
@@ -600,6 +658,11 @@ describe('Collect', () => {
     });
 
     describe('filter', () => {
+      const isOdd = (n: number) => !!(n % 2);
+      const numbers = [1, 2, 3, 4, 5, 6, 7, 8];
+      const odds = [
+        1, 3, 5, 7
+      ];
       describe('void', () => {
         it('should throw', () => {
           expect(() => c().sort()).toThrow();
@@ -618,11 +681,8 @@ describe('Collect', () => {
       })
 
       describe('array', () => {
-        const numbers = [1, 2, 3, 4, 5, 6, 7, 8];
         it('should filter', () => {
-          expect(c(numbers).filter((n) => !!(n % 2)).value).toEqual([
-            1, 3, 5, 7
-          ]);
+          expect(c(numbers).filter(isOdd).value).toEqual(odds);
         });
 
         it('should filter with stopper', () => {
@@ -646,21 +706,31 @@ describe('Collect', () => {
             1, 3, 4
           ]);
         });
+
+        it('should return a filtered value', () => {
+          const cf = c([... numbers]);
+          const output = cf.getFilter(isOdd);
+          expect(output).toEqual(odds);
+          expect(cf.value).toEqual(numbers);
+        })
       });
       describe('map', () => {
+        const millerOrBig = (v: number, i: any) => {
+          return (i === 'Miller') || v > 50;
+        };
         const map = new Map([
           ['Bobby', 300], ['Marge', 1], ['Susan', 100], ['Robert', 3],
           ['Alan', 2], ['Frank', 200], ['Miller', 4], ['Batman', 400]
         ]);
 
+        const filteredEntries = [
+          ['Bobby', 300], ['Susan', 100], ['Frank', 200],
+          ['Miller', 4], ['Batman', 400]
+        ];
+
         it('should filter', () => {
-          expect(Array.from(c(map).filter((v, i) => {
-              return (i === 'Miller') || v > 50;
-            }).value.entries()
-          )).toEqual([
-            ['Bobby', 300], ['Susan', 100], ['Frank', 200],
-            ['Miller', 4], ['Batman', 400]
-          ])
+          expect(Array.from(c(map).filter(millerOrBig).value.entries()
+          )).toEqual(filteredEntries);
         });
 
         it('should filter with stopper', () => {
@@ -672,33 +742,58 @@ describe('Collect', () => {
             }).value.entries()
           )).toEqual([
             ['Bobby', 300], ['Marge', 1], ['Susan', 100], ['Frank', 200],
-          ])
+          ]);
+        });
+
+        it('should return filtered value', () => {
+          const cf = c(new Map(map));
+          const filtered = cf.getFilter(millerOrBig);
+          expect(Array.from(filtered.entries())).toEqual(filteredEntries);
         });
       });
       describe('set', () => {
-        const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         it('should filter', () => {
-          expect(c(new Set(values)).filter((v) => !(v % 3)).value)
-            .toEqual(new Set([3, 6, 9]));
+          expect(c(new Set(numbers  )).filter(isOdd).value)
+            .toEqual(new Set(odds));
         });
+
+        it('should return filtered values', () => {
+          const cf = c(new Set(numbers  ));
+          expect(cf.getFilter(isOdd))
+            .toEqual(new Set(odds));
+          expect(cf.values).toEqual(numbers);
+        });
+
         it('should filter with stopper', () => {
-          expect(c(new Set(values)).filter((v) => {
+          expect(c(new Set(numbers)).filter((v) => {
             if (v > 7) {
               throw { $STOP: true };
             }
-            return !(v % 3);
+            return isOdd(v);
           }).value)
-            .toEqual(new Set([3, 6]));
+            .toEqual(new Set([1, 3, 5, 7]));
         });
       })
       describe('object', () => {
         const obj = { a: 100, b: 2, c: 300, d: 1, e: 200, f: 3 };
+        const bigs = { a: 100, c: 300, e: 200 };
 
         it('should filter objects', () => {
           expect(c(obj).filter((v, k) => {
             return v > 50;
-          }).value).toEqual({ a: 100, c: 300, e: 200 })
+          }).value)
+            .toEqual(bigs)
         })
+
+        it('should return a filtered object', () => {
+          const cf = c({...obj});
+          expect(cf.getFilter((v, k) => {
+            return v > 50;
+          }))
+            .toEqual(bigs);
+          expect(cf.value).toEqual(obj);
+        })
+
         it('should filter objects with stopper', () => {
           expect(c(obj).filter((v, k) => {
             if (k === 'd') {

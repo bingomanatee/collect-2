@@ -1,5 +1,3 @@
-import Bleed from 'nextra-theme-docs/bleed'
-import FeaturesTable from './../lib/FeaturesTable'
 
 # @wonderlandlabs/collect
 ## The Great Equalizer
@@ -16,7 +14,7 @@ as modification methods formerly exclusive to Arrays.
 When a method doesn't have an explicit return value (eg `get(key)`, `first()`), it
 returns the collection itself, for currying.
 
-See ["Getting Started"]**(https://collect-docs.vercel.app/**get-started) for examples of creation/usage of collections
+See ["Getting Started"](https://collect-docs.vercel.app/get-started) for examples of creation/usage of collections
 
 See ["Why Collect Exists"](https://collect-docs.vercel.app/why) for a longer explanation of the purpose and impetus of Collect.
 
